@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { EditorView } from "@codemirror/view";
 import { readTextFile } from "@tauri-apps/plugin-fs";
-import type { Tab, FileEntry, AppConfig } from "../types";
+import type { Tab, FileEntry, AppConfig, SessionData } from "../types";
 import { getFileName } from "../utils/pathHelpers";
+import { isProjectLocked, acquireLock, releaseLock, startHeartbeat } from "../utils/lockFile";
 
 interface UsePersistenceOptions {
   tabs: Tab[];
@@ -16,7 +17,6 @@ interface UsePersistenceOptions {
   setExpandedFolders: React.Dispatch<React.SetStateAction<Set<string>>>;
   loadDirectory: (dirPath: string) => Promise<FileEntry[]>;
   loadChildren: (folderPath: string) => Promise<FileEntry[]>;
-  createNewTab: () => void;
   editorViewRef: React.RefObject<EditorView | null>;
   cursorPositionsRef: React.RefObject<Record<string, number>>;
   addToast: (message: string, type: "success" | "error" | "warning" | "info") => void;
@@ -40,7 +40,6 @@ export const usePersistence = ({
   setExpandedFolders,
   loadDirectory,
   loadChildren,
-  createNewTab,
   editorViewRef,
   cursorPositionsRef,
   addToast,
@@ -69,14 +68,25 @@ export const usePersistence = ({
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // --- Write session state to config.json ---
+  // Lock management refs
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lockedProjectRef = useRef<string | null>(null);
+
+  // --- Write session state to config.json under sessions[projectRoot] ---
   const writeSessionToConfig = useCallback(async () => {
-    await saveConfig({
-      projectRoot: projectRootRef.current,
+    const currentProjectRoot = projectRootRef.current;
+    if (!currentProjectRoot) return;
+
+    const sessionData: SessionData = {
       openedPaths: tabsRef.current.map(t => t.path).filter((p): p is string => p !== null),
       activePath: tabsRef.current.find(t => t.id === activeIdRef.current)?.path || null,
       expandedFolders: Array.from(expandedFoldersRef.current),
       cursorPositions: cursorPositionsRef.current,
+    };
+
+    await saveConfig({
+      lastProjectRoot: currentProjectRoot,
+      sessions: { [currentProjectRoot]: sessionData },
     });
   }, [saveConfig, cursorPositionsRef]);
 
@@ -112,7 +122,50 @@ export const usePersistence = ({
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     await writeSessionToConfig();
+
+    // Release lock and stop heartbeat
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+    if (lockedProjectRef.current) {
+      await releaseLock(lockedProjectRef.current);
+      lockedProjectRef.current = null;
+    }
   }, [updateCursorPosition, writeSessionToConfig]);
+
+  // --- Save current session immediately (for project switching) ---
+  const saveCurrentSession = useCallback(async () => {
+    if (!isInitializedRef.current) return;
+    updateCursorPosition();
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    await writeSessionToConfig();
+  }, [updateCursorPosition, writeSessionToConfig]);
+
+  // --- Load session data for a specific project from config.json ---
+  const loadSessionForProject = useCallback(async (targetRoot: string): Promise<SessionData | null> => {
+    const config = await loadConfig();
+    return config?.sessions?.[targetRoot] ?? null;
+  }, [loadConfig]);
+
+  // --- Acquire lock for a project and start heartbeat ---
+  const acquireProjectLock = useCallback(async (targetRoot: string) => {
+    await acquireLock(targetRoot);
+    lockedProjectRef.current = targetRoot;
+    heartbeatRef.current = startHeartbeat(targetRoot);
+  }, []);
+
+  // --- Release current lock and stop heartbeat ---
+  const releaseCurrentLock = useCallback(async () => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+    if (lockedProjectRef.current) {
+      await releaseLock(lockedProjectRef.current);
+      lockedProjectRef.current = null;
+    }
+  }, []);
 
   // --- Restore data (from config.json, with localStorage as fallback) ---
   useEffect(() => {
@@ -120,38 +173,42 @@ export const usePersistence = ({
       const config = await loadConfig();
       setLoadedConfig(config);
 
-      // Determine the source of session state
-      let sessionState: {
-        projectRoot: string | null;
-        openedPaths: string[];
-        activePath: string | null;
-        expandedFolders: string[];
-        cursorPositions: Record<string, number>;
-      } | null = null;
+      // Determine which project to restore
+      let targetProjectRoot: string | null = null;
+      let sessionData: SessionData | null = null;
 
-      if (config && config.openedPaths && config.openedPaths.length > 0) {
-        // Session state found in config.json
-        sessionState = {
-          projectRoot: config.projectRoot ?? null,
-          openedPaths: config.openedPaths,
-          activePath: config.activePath ?? null,
-          expandedFolders: config.expandedFolders ?? [],
-          cursorPositions: config.cursorPositions ?? {},
-        };
-      } else {
-        // Migration: load legacy format from localStorage
+      if (config) {
+        const lastRoot = config.lastProjectRoot;
+        if (lastRoot) {
+          // Check if the last project is locked by another instance
+          const locked = await isProjectLocked(lastRoot);
+          if (!locked) {
+            targetProjectRoot = lastRoot;
+            sessionData = config.sessions?.[lastRoot] ?? null;
+          }
+          // If locked, targetProjectRoot stays null -> start fresh
+        }
+      }
+
+      // Fallback: check localStorage for legacy migration
+      if (!sessionData && !targetProjectRoot) {
         const saved = localStorage.getItem(LEGACY_STORAGE_KEY);
         if (saved) {
           try {
             const legacy = JSON.parse(saved);
-            sessionState = {
-              projectRoot: legacy.projectRoot ?? null,
-              openedPaths: legacy.openedPaths ?? [],
-              activePath: legacy.activePath ?? null,
-              expandedFolders: legacy.expandedFolders ?? [],
-              cursorPositions: legacy.cursorPositions ?? {},
-            };
-            // Remove legacy data after successful migration
+            const legacyRoot = legacy.projectRoot ?? null;
+            if (legacyRoot) {
+              const locked = await isProjectLocked(legacyRoot);
+              if (!locked) {
+                targetProjectRoot = legacyRoot;
+                sessionData = {
+                  openedPaths: legacy.openedPaths ?? [],
+                  activePath: legacy.activePath ?? null,
+                  expandedFolders: legacy.expandedFolders ?? [],
+                  cursorPositions: legacy.cursorPositions ?? {},
+                };
+              }
+            }
             localStorage.removeItem(LEGACY_STORAGE_KEY);
           } catch {
             localStorage.removeItem(LEGACY_STORAGE_KEY);
@@ -159,40 +216,42 @@ export const usePersistence = ({
         }
       }
 
-      if (!sessionState || sessionState.openedPaths.length === 0) {
-        createNewTab();
+      if (!sessionData || !targetProjectRoot || sessionData.openedPaths.length === 0) {
         setIsInitialized(true);
         return;
       }
 
       try {
-        if (sessionState.cursorPositions) {
-          cursorPositionsRef.current = sessionState.cursorPositions;
+        // Acquire lock and start heartbeat
+        await acquireLock(targetProjectRoot);
+        lockedProjectRef.current = targetProjectRoot;
+        heartbeatRef.current = startHeartbeat(targetProjectRoot);
+
+        if (sessionData.cursorPositions) {
+          cursorPositionsRef.current = sessionData.cursorPositions;
         }
 
-        if (sessionState.projectRoot) {
-          setProjectRoot(sessionState.projectRoot);
-          const tree = await loadDirectory(sessionState.projectRoot);
-          setFileTree(tree);
+        setProjectRoot(targetProjectRoot);
+        const tree = await loadDirectory(targetProjectRoot);
+        setFileTree(tree);
 
-          // Restore expanded folders by loading their children (parent-first order)
-          if (sessionState.expandedFolders && sessionState.expandedFolders.length > 0) {
-            const sortedFolders = [...sessionState.expandedFolders].sort(
-              (a, b) => a.length - b.length
-            );
-            for (const folderPath of sortedFolders) {
-              try {
-                await loadChildren(folderPath);
-              } catch {
-                // Folder may no longer exist; skip
-              }
+        // Restore expanded folders by loading their children (parent-first order)
+        if (sessionData.expandedFolders && sessionData.expandedFolders.length > 0) {
+          const sortedFolders = [...sessionData.expandedFolders].sort(
+            (a, b) => a.length - b.length
+          );
+          for (const folderPath of sortedFolders) {
+            try {
+              await loadChildren(folderPath);
+            } catch {
+              // Folder may no longer exist; skip
             }
-            setExpandedFolders(new Set(sessionState.expandedFolders));
           }
+          setExpandedFolders(new Set(sessionData.expandedFolders));
         }
 
         const restoredTabs: Tab[] = [];
-        for (const filePath of sessionState.openedPaths) {
+        for (const filePath of sessionData.openedPaths) {
           try {
             const content = await readTextFile(filePath);
             restoredTabs.push({
@@ -211,13 +270,11 @@ export const usePersistence = ({
 
         if (restoredTabs.length > 0) {
           setTabs(restoredTabs);
-          const active = restoredTabs.find(t => t.path === sessionState.activePath) || restoredTabs[0];
+          const active = restoredTabs.find(t => t.path === sessionData!.activePath) || restoredTabs[0];
           setActiveId(active.id);
-        } else {
-          createNewTab();
         }
       } catch {
-        createNewTab();
+        // Session restoration failed; start with no tabs
       }
       setIsInitialized(true);
     };
@@ -226,10 +283,11 @@ export const usePersistence = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cleanup debounce timer
+  // Cleanup debounce timer and heartbeat on unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
   }, []);
 
@@ -239,5 +297,10 @@ export const usePersistence = ({
     isInitialized,
     tabsRef,
     loadedConfig,
+    // Project switching helpers
+    saveCurrentSession,
+    loadSessionForProject,
+    acquireProjectLock,
+    releaseCurrentLock,
   };
 };

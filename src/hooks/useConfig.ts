@@ -4,6 +4,7 @@ import { readTextFile, writeTextFile, mkdir, exists } from "@tauri-apps/plugin-f
 import { appDataDir, join } from "@tauri-apps/api/path";
 import type { AppConfig } from "../types";
 import { DEFAULT_CONFIG } from "../constants";
+import { isLegacyConfig, migrateLegacyConfig } from "../utils/configMigration";
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -31,7 +32,13 @@ export const useConfig = (options?: UseConfigOptions) => {
       const configPath = await join(appData, "config.json");
       if (await exists(configPath)) {
         const content = await readTextFile(configPath);
-        const loadedConfig: AppConfig = JSON.parse(content);
+        let loadedConfig = JSON.parse(content);
+
+        // Migrate legacy flat format to new multi-session format
+        if (isLegacyConfig(loadedConfig)) {
+          loadedConfig = migrateLegacyConfig(loadedConfig);
+          await writeTextFile(configPath, JSON.stringify(loadedConfig, null, 2));
+        }
 
         setIsDark(loadedConfig.theme === "dark");
         setLineBreaks(loadedConfig.lineBreaks ?? DEFAULT_CONFIG.lineBreaks);
@@ -71,7 +78,14 @@ export const useConfig = (options?: UseConfigOptions) => {
         currentConfig = JSON.parse(content);
       }
 
+      // Deep merge for sessions field to avoid overwriting other projects' data
       const updatedConfig = { ...currentConfig, ...pending };
+      if (pending.sessions) {
+        updatedConfig.sessions = {
+          ...(currentConfig.sessions ?? {}),
+          ...pending.sessions,
+        };
+      }
       await writeTextFile(configPath, JSON.stringify(updatedConfig, null, 2));
     } catch (e) {
       console.error("Failed to save config:", e);

@@ -8,8 +8,10 @@ import { openPath } from "@tauri-apps/plugin-opener";
 import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, exists, writeFile } from "@tauri-apps/plugin-fs";
 import "./App.css";
 
-import type { FileEntry, ContextMenuConfig } from "./types";
+import type { FileEntry, Tab, ContextMenuConfig } from "./types";
 import { IMAGE_EXTENSIONS, MARKDOWN_REFERENCE } from "./constants";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { isProjectLocked } from "./utils/lockFile";
 import { saveCursorPosition } from "./utils/cursor";
 import { confirmAndExit } from "./utils/appLifecycle";
 import { getFileName, getDirName, getExtension, joinPath, normalizePath } from "./utils/pathHelpers";
@@ -87,7 +89,6 @@ function App() {
     loadDirectory,
     loadChildren,
     refreshTree,
-    openFolder,
     findNodeChildren,
   } = useFileTree({ addToast });
 
@@ -118,10 +119,13 @@ function App() {
 
   const { inputDialogConfig, promptUser, handleInputConfirm, handleInputCancel } = useInputDialog();
 
-  const { persistAppState, flushAppState, isInitialized, tabsRef, loadedConfig } = usePersistence({
+  const {
+    persistAppState, flushAppState, isInitialized, tabsRef, loadedConfig,
+    saveCurrentSession, loadSessionForProject, acquireProjectLock, releaseCurrentLock,
+  } = usePersistence({
     tabs, activeId, projectRoot, expandedFolders,
     setTabs, setActiveId, setProjectRoot, setFileTree, setExpandedFolders,
-    loadDirectory, loadChildren, createNewTab,
+    loadDirectory, loadChildren,
     editorViewRef, cursorPositionsRef,
     addToast,
     loadConfig, saveConfig,
@@ -700,6 +704,105 @@ function App() {
     await confirmAndExit(tabsRef.current, flushAppState);
   }, [flushAppState, tabsRef]);
 
+  // --- Open new window ---
+  const handleNewWindow = useCallback(() => {
+    const label = `markly-${Date.now()}`;
+    new WebviewWindow(label, {
+      url: "/",
+      title: "Markly",
+      width: 800,
+      height: 600,
+    });
+  }, []);
+
+  // --- Open folder with lock check and session restore ---
+  const handleOpenFolder = useCallback(async () => {
+    const selected = await open({ directory: true });
+    if (!selected || typeof selected !== "string") return;
+
+    // Check if the directory is locked by another instance
+    const locked = await isProjectLocked(selected);
+    if (locked) {
+      await ask(
+        "このディレクトリは別のMarklyインスタンスで開かれています。",
+        { title: "Markly", kind: "warning" }
+      );
+      return;
+    }
+
+    // Save current project's session
+    await saveCurrentSession();
+
+    // Release current lock
+    await releaseCurrentLock();
+
+    // Acquire lock for new project
+    await acquireProjectLock(selected);
+
+    // Set new project root and load tree
+    setProjectRoot(selected);
+    const tree = await loadDirectory(selected);
+    setFileTree(tree);
+
+    // Load saved session for this project (if any)
+    const sessionData = await loadSessionForProject(selected);
+    if (sessionData && sessionData.openedPaths.length > 0) {
+      // Restore expanded folders
+      if (sessionData.expandedFolders.length > 0) {
+        const sortedFolders = [...sessionData.expandedFolders].sort(
+          (a, b) => a.length - b.length
+        );
+        for (const folderPath of sortedFolders) {
+          try {
+            await loadChildren(folderPath);
+          } catch { /* skip deleted folders */ }
+        }
+        setExpandedFolders(new Set(sessionData.expandedFolders));
+      } else {
+        setExpandedFolders(new Set());
+      }
+
+      // Restore cursor positions
+      cursorPositionsRef.current = sessionData.cursorPositions ?? {};
+
+      // Restore tabs
+      const restoredTabs: Tab[] = [];
+      for (const filePath of sessionData.openedPaths) {
+        try {
+          const content = await readTextFile(filePath);
+          restoredTabs.push({
+            id: crypto.randomUUID(),
+            path: filePath,
+            name: getFileName(filePath) || "Untitled",
+            content,
+            originalContent: content,
+            isModified: false,
+          });
+        } catch {
+          addToast(`ファイルの復元に失敗: ${getFileName(filePath)}`, "warning");
+        }
+      }
+
+      if (restoredTabs.length > 0) {
+        setTabs(restoredTabs);
+        const active = restoredTabs.find(t => t.path === sessionData.activePath) || restoredTabs[0];
+        setActiveId(active.id);
+      } else {
+        setTabs([]);
+      }
+    } else {
+      // No saved session: fresh start
+      setExpandedFolders(new Set());
+      setTabs([]);
+      cursorPositionsRef.current = {};
+    }
+  }, [
+    saveCurrentSession, releaseCurrentLock, acquireProjectLock,
+    loadSessionForProject, setProjectRoot, loadDirectory, setFileTree,
+    loadChildren, setExpandedFolders, setTabs, setActiveId,
+    addToast,
+  ]);
+
   return (
     <div className={`flex h-screen w-screen bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 overflow-hidden font-sans relative ${isResizing ? "select-none" : ""}`}>
 
@@ -724,7 +827,8 @@ function App() {
         onRename={renameFile}
         onDelete={deleteFile}
         onRefreshTree={refreshTree}
-        onOpenFolder={openFolder}
+        onOpenFolder={handleOpenFolder}
+        onNewWindow={handleNewWindow}
         onTabClick={handleTabClick}
         onResizeMouseDown={handleMouseDown}
       />
@@ -790,7 +894,7 @@ function App() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
-            <div className="text-6xl mb-4 font-bold opacity-10 select-none tracking-tighter italic pointer-events-none">MARKLY</div>
+            <div className="text-6xl mb-4 font-bold opacity-10 select-none tracking-tighter italic pointer-events-none">Markly</div>
             <div className="text-sm uppercase tracking-widest opacity-30 font-bold">Select a file to edit</div>
           </div>
         )}

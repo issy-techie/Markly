@@ -6,7 +6,8 @@
     "linux"
   ],
   "windows": [
-    "main"
+    "main",
+    "markly-*"
   ],
   "permissions": [
     "window-state:default"

@@ -1,4 +1,4 @@
-import type { AppConfig } from "./types";
+import type { AppConfig, SessionData } from "./types";
 
 // --- Resize constraints ---
 export const RESIZE = {
@@ -22,7 +22,12 @@ export const DEFAULT_CONFIG: AppConfig = {
   editorFontSize: 14,
   previewFontFamily: "sans-serif",
   previewFontSize: 16,
-  projectRoot: null,
+  lastProjectRoot: null,
+  sessions: {},
+};
+
+// --- Default empty session ---
+export const EMPTY_SESSION: SessionData = {
   openedPaths: [],
   activePath: null,
   expandedFolders: [],
