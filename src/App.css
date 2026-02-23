@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 基本的なリセットとアプリ全体のスタイル */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* スクロールは各ペインで行うため */
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* ダークモード対応用（後ほど実装） */
+.dark body {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+/* プレビューエリア内のMarkdown装飾 */
+.preview-area h1 { @apply text-3xl font-bold border-b pb-2 mb-4; }
+.preview-area h2 { @apply text-2xl font-semibold border-b pb-1 mb-3 mt-6; }
+.preview-area h3 { @apply text-xl font-semibold mb-2 mt-4; }
+.preview-area p { @apply mb-4 leading-relaxed; }
+.preview-area ul { @apply list-disc ml-6 mb-4; }
+.preview-area ol { @apply list-decimal ml-6 mb-4; }
+.preview-area blockquote { @apply border-l-4 border-slate-300 pl-4 italic text-slate-600; }
+.preview-area code { @apply bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1 rounded text-sm font-mono; }
+.preview-area pre { @apply bg-slate-800 text-slate-100 p-4 rounded-lg overflow-x-auto my-4; }
+.preview-area pre code { @apply bg-transparent p-0 text-slate-100; }
+.preview-area table { @apply w-full border-collapse mb-4 text-sm; }
+.preview-area th { @apply border border-slate-300 dark:border-slate-600 px-4 py-2 bg-slate-100 dark:bg-slate-800 font-semibold text-left; }
+.preview-area td { @apply border border-slate-300 dark:border-slate-600 px-4 py-2; }
+
+/* 共通スクロールバースタイル (Editor, Preview, Sidebar) */
+.custom-scrollbar::-webkit-scrollbar,
+.cm-scroller::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.cm-scroller::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 5px;
+  border: 2px solid transparent; 
+  background-clip: content-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.cm-scroller::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb,
+.dark .cm-scroller::-webkit-scrollbar-thumb {
+  background-color: #475569;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.dark .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner,
+.cm-scroller::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* タブバー用スクロールバー (横のみ、細く) */
+.tab-scrollbar {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.tab-scrollbar::-webkit-scrollbar {
+  height: 4px;
+  width: 0px;
+}
+
+.tab-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 2px;
+}
+
+.tab-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.dark .tab-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #475569;
+}
+
+.dark .tab-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
+
+/* リサイズハンドル */
+.resize-handle-v {
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.resize-handle-v:hover {
+  background-color: rgba(59, 130, 246, 0.5); /* blue-500 with opacity */
+}
+
+.resize-handle-v:active {
+  background-color: rgba(59, 130, 246, 0.8);
+}
+
+/* 縦リサイズハンドル（横向きの線） */
+.resize-handle-h {
+  height: 4px;
+  cursor: row-resize;
+  background: transparent;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.resize-handle-h:hover {
+  background-color: rgba(59, 130, 246, 0.5);
+}
+
+.resize-handle-h:active {
+  background-color: rgba(59, 130, 246, 0.8);
+}
+
+/* Toast notification slide-in animation */
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-slide-in {
+  animation: toast-slide-in 0.3s ease-out;
+}
+
+/* CodeMirror Scroller Override */
+.cm-scroller {
+  overflow: auto !important;
+}
+
+/* 
+ * エディタ入力時の折り畳み（フォールディング）マーク出現・消失による、
+ * レイアウトシフト（画面ブレ）を防ぐためにガター幅を固定
+ */
+.cm-foldGutter {
+  width: 16px !important;
+}
