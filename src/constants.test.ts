@@ -57,11 +57,8 @@ describe("DEFAULT_CONFIG", () => {
   });
 
   it("has empty session state by default", () => {
-    expect(DEFAULT_CONFIG.projectRoot).toBeNull();
-    expect(DEFAULT_CONFIG.openedPaths).toEqual([]);
-    expect(DEFAULT_CONFIG.activePath).toBeNull();
-    expect(DEFAULT_CONFIG.expandedFolders).toEqual([]);
-    expect(DEFAULT_CONFIG.cursorPositions).toEqual({});
+    expect(DEFAULT_CONFIG.lastProjectRoot).toBeNull();
+    expect(DEFAULT_CONFIG.sessions).toEqual({});
   });
 });
 

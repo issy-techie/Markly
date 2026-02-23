@@ -1,6 +1,15 @@
 // --- Type definitions ---
+
+/** Per-project session data stored under sessions[projectRoot] */
+export interface SessionData {
+  openedPaths: string[];
+  activePath: string | null;
+  expandedFolders: string[];
+  cursorPositions: Record<string, number>;
+}
+
 export interface AppConfig {
-  // User preferences
+  // User preferences (global, shared across all projects)
   theme: "light" | "dark";
   sidebarWidth: number;
   editorWidthPercent: number;
@@ -11,12 +20,9 @@ export interface AppConfig {
   editorFontSize: number;
   previewFontFamily: string;
   previewFontSize: number;
-  // Session state (managed in config.json)
-  projectRoot: string | null;
-  openedPaths: string[];
-  activePath: string | null;
-  expandedFolders: string[];
-  cursorPositions: Record<string, number>;
+  // Multi-project session management
+  lastProjectRoot: string | null;
+  sessions: Record<string, SessionData>;
 }
 
 export interface Tab { 

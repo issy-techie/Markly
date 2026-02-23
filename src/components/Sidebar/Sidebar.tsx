@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, FolderOpen, FolderPlus, FilePlus, RefreshCw } from "lucide-react";
+import { FileText, FolderOpen, FolderPlus, FilePlus, RefreshCw, ExternalLink } from "lucide-react";
 import type { Tab, FileEntry } from "../../types";
 import FileTreeNode from "../FileTreeNode";
 
@@ -24,6 +24,7 @@ interface SidebarProps {
   onDelete: (path: string, isDirectory: boolean) => void;
   onRefreshTree: () => void;
   onOpenFolder: () => void;
+  onNewWindow: () => void;
   onTabClick: (tabId: string) => void;
   onResizeMouseDown: (target: "sidebar" | "editor" | "opentabs") => void;
 }
@@ -49,6 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDelete,
   onRefreshTree,
   onOpenFolder,
+  onNewWindow,
   onTabClick,
   onResizeMouseDown,
 }) => {
@@ -67,6 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button onClick={() => projectRoot && onCreateFile(projectRoot)} title="ルートにファイル作成"><FilePlus size={14} className="hover:text-blue-500" /></button>
           <button onClick={() => projectRoot && onCreateFolder(projectRoot)} title="ルートにディレクトリ作成"><FolderPlus size={14} className="hover:text-blue-500" /></button>
           <button onClick={onOpenFolder} title="フォルダを開く"><FolderOpen size={14} className="hover:text-blue-500" /></button>
+          <button onClick={onNewWindow} title="新しいウィンドウで開く"><ExternalLink size={14} className="hover:text-blue-500" /></button>
         </div>
       </div>
 
