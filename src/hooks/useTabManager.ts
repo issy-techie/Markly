@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import type { EditorView } from "@codemirror/view";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { save, ask } from "@tauri-apps/plugin-dialog";
@@ -97,6 +97,18 @@ export const useTabManager = ({
     }
   };
 
+  const reorderTabs = useCallback((fromIndex: number, toIndex: number) => {
+    setTabs(prev => {
+      if (fromIndex === toIndex) return prev;
+      if (fromIndex < 0 || fromIndex >= prev.length) return prev;
+      if (toIndex < 0 || toIndex >= prev.length) return prev;
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
+  }, []);
+
   return {
     tabs, setTabs,
     activeId, setActiveId,
@@ -105,5 +117,6 @@ export const useTabManager = ({
     createNewTab,
     closeTab,
     saveFile,
+    reorderTabs,
   };
 };
