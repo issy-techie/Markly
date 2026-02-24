@@ -23,6 +23,7 @@ interface UsePersistenceOptions {
   // Unified config.json management
   loadConfig: () => Promise<AppConfig | null>;
   saveConfig: (config: Partial<AppConfig>) => Promise<void>;
+  flushSaveConfig: () => Promise<void>;
 }
 
 const LEGACY_STORAGE_KEY = "markly_app_state";
@@ -45,6 +46,7 @@ export const usePersistence = ({
   addToast,
   loadConfig,
   saveConfig,
+  flushSaveConfig,
 }: UsePersistenceOptions) => {
   const [isInitialized, setIsInitialized] = useState(false);
   // Pass loadConfig result to App.tsx (for applyConfig)
@@ -122,6 +124,7 @@ export const usePersistence = ({
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     await writeSessionToConfig();
+    await flushSaveConfig();
 
     // Release lock and stop heartbeat
     if (heartbeatRef.current) {
@@ -132,7 +135,7 @@ export const usePersistence = ({
       await releaseLock(lockedProjectRef.current);
       lockedProjectRef.current = null;
     }
-  }, [updateCursorPosition, writeSessionToConfig]);
+  }, [updateCursorPosition, writeSessionToConfig, flushSaveConfig]);
 
   // --- Save current session immediately (for project switching) ---
   const saveCurrentSession = useCallback(async () => {
