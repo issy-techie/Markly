@@ -104,6 +104,14 @@ html, body, #root {
   background-color: #64748b;
 }
 
+/* タブ ドラッグ&ドロップ インジケータ */
+.tab-drop-before {
+  box-shadow: -2px 0 0 0 #3b82f6;
+}
+
+.tab-drop-after {
+  box-shadow: 2px 0 0 0 #3b82f6;
+}
 
 /* リサイズハンドル */
 .resize-handle-v {

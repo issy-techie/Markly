@@ -19,6 +19,11 @@ interface TabBarProps {
   onOpenSettingsDialog: () => void;
   onOpenAboutDialog: () => void;
   onExit: () => void;
+  // Tab drag-and-drop reorder
+  draggedIndex: number | null;
+  dropTargetIndex: number | null;
+  dropPosition: "before" | "after" | null;
+  onTabMouseDown: (e: React.MouseEvent, index: number) => void;
 }
 
 const TabBar: React.FC<TabBarProps> = ({
@@ -37,22 +42,31 @@ const TabBar: React.FC<TabBarProps> = ({
   onOpenSettingsDialog,
   onOpenAboutDialog,
   onExit,
+  draggedIndex,
+  dropTargetIndex,
+  dropPosition,
+  onTabMouseDown,
 }) => {
   return (
     <div className="h-8 flex items-end bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-1 gap-0.5">
       <div className="flex-1 flex h-full overflow-x-auto tab-scrollbar items-end">
-        {tabs.map(tab => (
+        {tabs.map((tab, index) => (
           <div
             key={tab.id}
             onClick={() => onTabClick(tab.id)}
             onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onCloseTab(tab.id, e); } }}
+            onMouseDown={(e) => onTabMouseDown(e, index)}
             className={`
               flex items-center gap-2 px-3 py-1.5 text-xs rounded-t-lg
-              cursor-pointer group flex-shrink-0 min-w-[80px] max-w-[200px] transition-all duration-150
+              cursor-pointer group flex-shrink-0 min-w-[80px] max-w-[200px]
+              ${draggedIndex === null ? "transition-all duration-150" : ""}
               ${activeId === tab.id
                 ? "bg-white dark:bg-slate-900 shadow-sm font-medium -mb-px border-t border-l border-r border-slate-200 dark:border-slate-700"
                 : "bg-slate-200/50 dark:bg-slate-800/50 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 mt-1"
               }
+              ${draggedIndex === index ? "opacity-40" : ""}
+              ${dropTargetIndex === index && dropPosition === "before" ? "tab-drop-before" : ""}
+              ${dropTargetIndex === index && dropPosition === "after" ? "tab-drop-after" : ""}
             `}
           >
             <span className="truncate flex-1 select-none">{tab.name}</span>

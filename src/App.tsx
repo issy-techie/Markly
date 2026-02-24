@@ -21,6 +21,7 @@ import { useResize } from "./hooks/useResize";
 import { useToast } from "./hooks/useToast";
 import { useFileTree } from "./hooks/useFileTree";
 import { useTabManager } from "./hooks/useTabManager";
+import { useTabDragDrop } from "./hooks/useTabDragDrop";
 import { usePersistence } from "./hooks/usePersistence";
 import { useInputDialog } from "./hooks/useInputDialog";
 import ToastContainer from "./components/Toast";
@@ -100,7 +101,15 @@ function App() {
     createNewTab,
     closeTab,
     saveFile,
+    reorderTabs,
   } = useTabManager({ addToast, refreshTree, editorViewRef, cursorPositionsRef });
+
+  const {
+    draggedIndex,
+    dropTargetIndex,
+    dropPosition,
+    handleTabMouseDown,
+  } = useTabDragDrop({ tabs, reorderTabs });
 
   const {
     showSearchDialog, setShowSearchDialog,
@@ -261,10 +270,18 @@ function App() {
 
   // --- Keyboard shortcuts (table-driven) ---
   useEffect(() => {
-    const keyMap: { key: string; ctrl?: boolean; handler: () => void }[] = [
+    const keyMap: { key: string; ctrl?: boolean; shift?: boolean; handler: () => void }[] = [
       { key: "s", ctrl: true, handler: () => saveFile() },
       { key: "f", ctrl: true, handler: () => setShowSearchDialog(true) },
       { key: "h", ctrl: true, handler: () => setShowSearchDialog(true) },
+      { key: "ArrowLeft", ctrl: true, shift: true, handler: () => {
+        const idx = tabs.findIndex(t => t.id === activeId);
+        if (idx > 0) reorderTabs(idx, idx - 1);
+      }},
+      { key: "ArrowRight", ctrl: true, shift: true, handler: () => {
+        const idx = tabs.findIndex(t => t.id === activeId);
+        if (idx >= 0 && idx < tabs.length - 1) reorderTabs(idx, idx + 1);
+      }},
     ];
 
     const escapeTargets: [boolean, () => void][] = [
@@ -284,6 +301,8 @@ function App() {
 
       for (const binding of keyMap) {
         if (binding.ctrl && !(e.ctrlKey || e.metaKey)) continue;
+        if (binding.shift && !e.shiftKey) continue;
+        if (!binding.shift && e.shiftKey && binding.ctrl) continue;
         if (e.key === binding.key) {
           e.preventDefault();
           binding.handler();
@@ -294,7 +313,7 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tabs, activeId, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog]);
+  }, [tabs, activeId, reorderTabs, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog]);
 
   // --- Close hamburger menu on outside click ---
   useEffect(() => {
@@ -858,6 +877,10 @@ function App() {
           onOpenSettingsDialog={() => setShowSettingsDialog(true)}
           onOpenAboutDialog={() => setShowAboutDialog(true)}
           onExit={handleExit}
+          draggedIndex={draggedIndex}
+          dropTargetIndex={dropTargetIndex}
+          dropPosition={dropPosition}
+          onTabMouseDown={handleTabMouseDown}
         />
 
         {activeTab ? (
