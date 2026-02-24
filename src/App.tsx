@@ -3,6 +3,7 @@ import { EditorView } from "@codemirror/view";
 import { undo, redo } from "@codemirror/commands";
 import mermaid from "mermaid";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open, ask } from "@tauri-apps/plugin-dialog";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, exists, writeFile } from "@tauri-apps/plugin-fs";
@@ -210,15 +211,24 @@ function App() {
     }
   }, [activeId, activeTab?.path, setExpandedFolders, fileTree, expandedFolders, loadChildren, findNodeChildren]);
 
-  // --- App exit confirmation ---
+  // --- App exit confirmation (per-window) ---
   useEffect(() => {
-    const unlistenClose = listen("close-requested", async () => {
-      await confirmAndExit(tabsRef.current, flushAppState, {
-        message: "未保存の変更があります。変更を破棄して終了しますか？",
-        title: "Markly - 終了の確認",
-        okLabel: "破棄して終了",
-        cancelLabel: "キャンセル"
-      });
+    const unlistenClose = getCurrentWindow().onCloseRequested(async (event) => {
+      const hasModified = tabsRef.current.some(t => t.isModified);
+      if (hasModified) {
+        const ok = await ask("未保存の変更があります。変更を破棄して終了しますか？", {
+          title: "Markly - 終了の確認",
+          kind: "warning",
+          okLabel: "破棄して終了",
+          cancelLabel: "キャンセル"
+        });
+        if (!ok) {
+          event.preventDefault();
+          return;
+        }
+      }
+      await flushAppState();
+      await getCurrentWindow().destroy();
     });
 
     return () => {
