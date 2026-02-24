@@ -61,8 +61,13 @@ export const useConfig = (options?: UseConfigOptions) => {
     }
   }, [onError]);
 
-  /** Flush pending config changes to disk immediately */
+  /** Flush pending config changes to disk immediately (cancels debounce timer) */
   const flushSaveConfig = useCallback(async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+
     const pending = pendingConfigRef.current;
     pendingConfigRef.current = {};
 
@@ -140,6 +145,7 @@ export const useConfig = (options?: UseConfigOptions) => {
     previewFontSize, setPreviewFontSize,
     loadConfig,
     saveConfig,
+    flushSaveConfig,
     toggleTheme,
   };
 };

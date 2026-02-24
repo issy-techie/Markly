@@ -69,6 +69,7 @@ function App() {
     previewFontSize, setPreviewFontSize,
     loadConfig,
     saveConfig,
+    flushSaveConfig,
     toggleTheme,
   } = useConfig({ onError: configErrorHandler });
 
@@ -138,7 +139,7 @@ function App() {
     loadDirectory, loadChildren,
     editorViewRef, cursorPositionsRef,
     addToast,
-    loadConfig, saveConfig,
+    loadConfig, saveConfig, flushSaveConfig,
   });
 
   // --- Apply restored config to layout ---
@@ -161,6 +162,7 @@ function App() {
               selection: { anchor: pos, head: pos },
               effects: EditorView.scrollIntoView(pos, { y: 'start' })
             });
+            cursorPositionsRef.current[key] = pos;
             view.focus();
           } catch(e) {
             console.warn("Cursor restoration failed:", e);
@@ -214,6 +216,8 @@ function App() {
   // --- App exit confirmation (per-window) ---
   useEffect(() => {
     const unlistenClose = getCurrentWindow().onCloseRequested(async (event) => {
+      event.preventDefault();
+
       const hasModified = tabsRef.current.some(t => t.isModified);
       if (hasModified) {
         const ok = await ask("未保存の変更があります。変更を破棄して終了しますか？", {
@@ -222,11 +226,9 @@ function App() {
           okLabel: "破棄して終了",
           cancelLabel: "キャンセル"
         });
-        if (!ok) {
-          event.preventDefault();
-          return;
-        }
+        if (!ok) return;
       }
+
       await flushAppState();
       await getCurrentWindow().destroy();
     });
