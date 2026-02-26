@@ -10,7 +10,7 @@ import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, 
 import "./App.css";
 
 import type { FileEntry, Tab, ContextMenuConfig, Language } from "./types";
-import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, MARKDOWN_REFERENCE } from "./constants";
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, getMarkdownReference } from "./constants";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { isProjectLocked } from "./utils/lockFile";
 import { saveCursorPosition } from "./utils/cursor";
@@ -49,7 +49,7 @@ function App() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showReference, setShowReference] = useState(false);
-  const [refActiveCategory, setRefActiveCategory] = useState(MARKDOWN_REFERENCE[0].category);
+  const [refActiveCategory, setRefActiveCategory] = useState("headings");
 
   // --- Shared refs ---
   const cursorPositionsRef = useRef<Record<string, number>>({});
@@ -85,6 +85,9 @@ function App() {
 
   // i18n translations — memoized to avoid re-creating on every render
   const t = useMemo(() => getTranslations(language ?? "ja"), [language]);
+
+  // Localized markdown reference data
+  const markdownRef = useMemo(() => getMarkdownReference(language ?? "ja"), [language]);
 
   // Language selection handler for first-launch screen
   const handleSelectLanguage = useCallback((lang: Language) => {
@@ -1089,6 +1092,7 @@ function App() {
               onSetRefActiveCategory={setRefActiveCategory}
               onCloseReference={() => setShowReference(false)}
               onInsertSnippet={insertSnippet}
+              markdownReference={markdownRef}
             />
           </div>
         ) : (

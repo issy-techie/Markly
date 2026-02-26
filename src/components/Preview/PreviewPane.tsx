@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
-import { MARKDOWN_REFERENCE } from "../../constants";
+import type { ReferenceCategory } from "../../constants";
 import { createMarkdownComponents } from "./MarkdownRenderers";
 import { useI18n } from "../../hooks/useI18n";
 
@@ -20,6 +20,7 @@ interface PreviewPaneProps {
   onSetRefActiveCategory: (category: string) => void;
   onCloseReference: () => void;
   onInsertSnippet: (snippet: string) => void;
+  markdownReference: ReferenceCategory[];
 }
 
 const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
@@ -34,6 +35,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
   onSetRefActiveCategory,
   onCloseReference,
   onInsertSnippet,
+  markdownReference,
 }, ref) => {
   const t = useI18n();
   const markdownComponents = useMemo(
@@ -77,12 +79,12 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Category Tabs */}
           <div className="flex overflow-x-auto tab-scrollbar bg-slate-100/30 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 px-2 pt-1 no-scrollbar shrink-0">
-            {MARKDOWN_REFERENCE.map((cat) => (
+            {markdownReference.map((cat) => (
               <button
-                key={cat.category}
-                onClick={() => onSetRefActiveCategory(cat.category)}
+                key={cat.id}
+                onClick={() => onSetRefActiveCategory(cat.id)}
                 className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all border-b-2 ${
-                  refActiveCategory === cat.category
+                  refActiveCategory === cat.id
                     ? "border-blue-500 text-blue-500 bg-white/50 dark:bg-slate-700/50"
                     : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 }`}
@@ -93,8 +95,8 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-4 custom-scrollbar">
-            {/* Color picker UI — shown only for 文字色 category */}
-            {refActiveCategory === "文字色" && (
+            {/* Color picker UI — shown only for textColor category */}
+            {refActiveCategory === "textColor" && (
               <div className="mb-3 p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 shadow-sm animate-in fade-in duration-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Pipette size={12} className="text-slate-400" />
@@ -162,7 +164,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
               </div>
             )}
 
-            {MARKDOWN_REFERENCE.filter(cat => cat.category === refActiveCategory).map((cat, idx) => (
+            {markdownReference.filter(cat => cat.id === refActiveCategory).map((cat, idx) => (
               <div key={idx} className="animate-in fade-in slide-in-from-right-2 duration-200">
                 <div className="grid grid-cols-1 gap-1">
                   {cat.items.map((item, iidx) => (
