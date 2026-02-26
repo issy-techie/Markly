@@ -4,8 +4,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
-import { MARKDOWN_REFERENCE } from "../../constants";
+import type { ReferenceCategory } from "../../constants";
 import { createMarkdownComponents } from "./MarkdownRenderers";
+import { useI18n } from "../../hooks/useI18n";
 
 interface PreviewPaneProps {
   content: string;
@@ -19,6 +20,7 @@ interface PreviewPaneProps {
   onSetRefActiveCategory: (category: string) => void;
   onCloseReference: () => void;
   onInsertSnippet: (snippet: string) => void;
+  markdownReference: ReferenceCategory[];
 }
 
 const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
@@ -33,7 +35,9 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
   onSetRefActiveCategory,
   onCloseReference,
   onInsertSnippet,
+  markdownReference,
 }, ref) => {
+  const t = useI18n();
   const markdownComponents = useMemo(
     () => createMarkdownComponents({ activeFilePath, isDark }),
     [activeFilePath, isDark]
@@ -75,12 +79,12 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
         <div className="flex-1 min-h-0 flex flex-col">
           {/* Category Tabs */}
           <div className="flex overflow-x-auto tab-scrollbar bg-slate-100/30 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 px-2 pt-1 no-scrollbar shrink-0">
-            {MARKDOWN_REFERENCE.map((cat) => (
+            {markdownReference.map((cat) => (
               <button
-                key={cat.category}
-                onClick={() => onSetRefActiveCategory(cat.category)}
+                key={cat.id}
+                onClick={() => onSetRefActiveCategory(cat.id)}
                 className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all border-b-2 ${
-                  refActiveCategory === cat.category
+                  refActiveCategory === cat.id
                     ? "border-blue-500 text-blue-500 bg-white/50 dark:bg-slate-700/50"
                     : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 }`}
@@ -91,12 +95,12 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-4 custom-scrollbar">
-            {/* Color picker UI — shown only for 文字色 category */}
-            {refActiveCategory === "文字色" && (
+            {/* Color picker UI — shown only for textColor category */}
+            {refActiveCategory === "textColor" && (
               <div className="mb-3 p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 shadow-sm animate-in fade-in duration-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Pipette size={12} className="text-slate-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">カラーピッカー</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t.colorPicker}</span>
                 </div>
                 {/* Mode toggle */}
                 <div className="flex gap-1 mb-2">
@@ -108,7 +112,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                         : "bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-500"
                     }`}
                   >
-                    文字色
+                    {t.textColor}
                   </button>
                   <button
                     onClick={() => setPickerMode("bg")}
@@ -118,7 +122,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                         : "bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-500"
                     }`}
                   >
-                    背景色
+                    {t.bgColor}
                   </button>
                 </div>
                 {/* Color wheel + HEX input */}
@@ -128,7 +132,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                     value={pickerColor}
                     onChange={(e) => setPickerColor(e.target.value)}
                     className="w-8 h-8 rounded cursor-pointer border border-slate-300 dark:border-slate-500 p-0"
-                    title="カラーホイールで色を選択"
+                    title={t.colorPicker}
                   />
                   <input
                     type="text"
@@ -145,9 +149,9 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                 {/* Preview */}
                 <div className="mb-2 p-2 rounded bg-slate-50 dark:bg-slate-800 text-[11px] text-center">
                   {pickerMode === "text" ? (
-                    <span style={{ color: pickerColor }}>プレビューテキスト — {pickerColor}</span>
+                    <span style={{ color: pickerColor }}>Preview — {pickerColor}</span>
                   ) : (
-                    <span style={{ backgroundColor: pickerColor, padding: "0 4px", borderRadius: "2px" }}>プレビューテキスト — {pickerColor}</span>
+                    <span style={{ backgroundColor: pickerColor, padding: "0 4px", borderRadius: "2px" }}>Preview — {pickerColor}</span>
                   )}
                 </div>
                 {/* Insert button */}
@@ -155,12 +159,12 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                   onClick={handleInsertPickerColor}
                   className="w-full text-[11px] py-1.5 rounded bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors"
                 >
-                  この色で挿入
+                  {t.insertThisColor}
                 </button>
               </div>
             )}
 
-            {MARKDOWN_REFERENCE.filter(cat => cat.category === refActiveCategory).map((cat, idx) => (
+            {markdownReference.filter(cat => cat.id === refActiveCategory).map((cat, idx) => (
               <div key={idx} className="animate-in fade-in slide-in-from-right-2 duration-200">
                 <div className="grid grid-cols-1 gap-1">
                   {cat.items.map((item, iidx) => (
@@ -190,7 +194,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
           </div>
         </div>
         <div className="p-3 bg-slate-100/30 dark:bg-slate-900/10 border-t border-slate-200 dark:border-slate-700 shrink-0">
-          <p className="text-[10px] text-slate-400 leading-tight">項目をクリックするとカーソル位置にテンプレートが挿入されます。</p>
+          <p className="text-[10px] text-slate-400 leading-tight">{t.referenceFooter}</p>
         </div>
       </div>
     </div>

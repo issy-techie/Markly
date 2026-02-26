@@ -1,6 +1,7 @@
 import React from "react";
 import { Plus, X, Search, Menu, Settings, Info, LogOut, Sun, Moon, Book } from "lucide-react";
 import type { Tab } from "../../types";
+import { useI18n } from "../../hooks/useI18n";
 import IconButton from "../ui/IconButton";
 
 interface TabBarProps {
@@ -47,6 +48,7 @@ const TabBar: React.FC<TabBarProps> = ({
   dropPosition,
   onTabMouseDown,
 }) => {
+  const t = useI18n();
   return (
     <div className="h-8 flex items-end bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-1 gap-0.5">
       <div className="flex-1 flex h-full overflow-x-auto tab-scrollbar items-end">
@@ -77,50 +79,50 @@ const TabBar: React.FC<TabBarProps> = ({
       </div>
       <div className="flex items-center h-full bg-slate-100 dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 px-2 flex-shrink-0 gap-1">
         <IconButton onClick={onCreateNewTab} title="New Tab"><Plus size={16} /></IconButton>
-        <IconButton onClick={onToggleReference} title="Markdownリファレンス" active={showReference}><Book size={16} /></IconButton>
-        <IconButton onClick={onToggleTheme} title="テーマ切替">
+        <IconButton onClick={onToggleReference} title={t.markdownReference} active={showReference}><Book size={16} /></IconButton>
+        <IconButton onClick={onToggleTheme} title={t.toggleTheme}>
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </IconButton>
         <div className="relative" data-hamburger-menu>
-          <IconButton onClick={onToggleHamburgerMenu} title="メニュー">
+          <IconButton onClick={onToggleHamburgerMenu} title={t.menu}>
             <Menu size={16} />
           </IconButton>
           {showHamburgerMenu && (
             <div
-              className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-md py-1 z-50 text-sm"
+              className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-md py-1 z-50 text-sm"
               onClick={onToggleHamburgerMenu}
             >
               <button
                 onClick={onOpenSearchDialog}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
-                <Search size={14} /> 検索・置換 <span className="ml-auto text-xs text-slate-400">Ctrl+F</span>
+                <Search size={14} className="shrink-0" /> {t.searchAndReplace} <span className="ml-auto text-xs text-slate-400">Ctrl+F</span>
               </button>
               <button
                 onClick={onToggleTheme}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
-                {isDark ? <Sun size={14} /> : <Moon size={14} />} テーマ切替 ({isDark ? "Light" : "Dark"})
+                {isDark ? <Sun size={14} className="shrink-0" /> : <Moon size={14} className="shrink-0" />} {t.toggleTheme} ({isDark ? "Light" : "Dark"})
               </button>
               <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
               <button
                 onClick={onOpenSettingsDialog}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
-                <Settings size={14} /> 設定
+                <Settings size={14} className="shrink-0" /> {t.settings}
               </button>
               <button
                 onClick={onOpenAboutDialog}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
-                <Info size={14} /> バージョン情報
+                <Info size={14} className="shrink-0" /> {t.versionInfo}
               </button>
               <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
               <button
                 onClick={onExit}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors whitespace-nowrap"
               >
-                <LogOut size={14} /> 終了
+                <LogOut size={14} className="shrink-0" /> {t.exit}
               </button>
             </div>
           )}

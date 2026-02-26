@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { readTextFile, writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
-import type { AppConfig } from "../types";
+import type { AppConfig, Language } from "../types";
 import { DEFAULT_CONFIG } from "../constants";
 import { isLegacyConfig, migrateLegacyConfig } from "../utils/configMigration";
 
@@ -22,6 +22,7 @@ export const useConfig = (options?: UseConfigOptions) => {
   const [editorFontSize, setEditorFontSize] = useState(DEFAULT_CONFIG.editorFontSize);
   const [previewFontFamily, setPreviewFontFamily] = useState(DEFAULT_CONFIG.previewFontFamily);
   const [previewFontSize, setPreviewFontSize] = useState(DEFAULT_CONFIG.previewFontSize);
+  const [language, setLanguage] = useState<Language | null>(DEFAULT_CONFIG.language);
 
   // Debounce state for saveConfig
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,6 +50,7 @@ export const useConfig = (options?: UseConfigOptions) => {
         if (loadedConfig.editorFontSize) setEditorFontSize(loadedConfig.editorFontSize);
         if (loadedConfig.previewFontFamily) setPreviewFontFamily(loadedConfig.previewFontFamily);
         if (loadedConfig.previewFontSize) setPreviewFontSize(loadedConfig.previewFontSize);
+        setLanguage(loadedConfig.language ?? null);
 
         return loadedConfig;
       } else {
@@ -139,6 +141,7 @@ export const useConfig = (options?: UseConfigOptions) => {
 
   return {
     isDark,
+    language, setLanguage,
     lineBreaks, setLineBreaks,
     lineWrapping, setLineWrapping,
     scrollSync, setScrollSync,

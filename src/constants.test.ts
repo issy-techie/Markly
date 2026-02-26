@@ -5,7 +5,7 @@ import {
   FONT_OPTIONS,
   PREVIEW_FONT_OPTIONS,
   IMAGE_EXTENSIONS,
-  MARKDOWN_REFERENCE,
+  getMarkdownReference,
 } from "./constants";
 
 describe("RESIZE constants", () => {
@@ -56,9 +56,13 @@ describe("DEFAULT_CONFIG", () => {
     expect(DEFAULT_CONFIG.previewFontFamily.length).toBeGreaterThan(0);
   });
 
-  it("has scrollSync as boolean defaulting to false", () => {
+  it("has scrollSync as boolean defaulting to true", () => {
     expect(typeof DEFAULT_CONFIG.scrollSync).toBe("boolean");
-    expect(DEFAULT_CONFIG.scrollSync).toBe(false);
+    expect(DEFAULT_CONFIG.scrollSync).toBe(true);
+  });
+
+  it("has language defaulting to null (first launch trigger)", () => {
+    expect(DEFAULT_CONFIG.language).toBeNull();
   });
 
   it("has empty session state by default", () => {
@@ -124,91 +128,151 @@ describe("IMAGE_EXTENSIONS", () => {
   });
 });
 
-describe("MARKDOWN_REFERENCE", () => {
-  it("has at least one category", () => {
-    expect(MARKDOWN_REFERENCE.length).toBeGreaterThan(0);
+describe("getMarkdownReference", () => {
+  const jaRef = getMarkdownReference("ja");
+  const enRef = getMarkdownReference("en");
+
+  it("returns data for both languages", () => {
+    expect(jaRef.length).toBeGreaterThan(0);
+    expect(enRef.length).toBeGreaterThan(0);
   });
 
-  it("each category has a non-empty name and items", () => {
-    for (const cat of MARKDOWN_REFERENCE) {
-      expect(cat.category).toBeTruthy();
-      expect(cat.items.length).toBeGreaterThan(0);
-    }
+  it("both languages have the same category IDs", () => {
+    const jaIds = jaRef.map(c => c.id);
+    const enIds = enRef.map(c => c.id);
+    expect(jaIds).toEqual(enIds);
   });
 
-  it("each item has label, syntax, snippet, and sample", () => {
-    for (const cat of MARKDOWN_REFERENCE) {
-      for (const item of cat.items) {
-        expect(item.label).toBeTruthy();
-        expect(item.syntax).toBeTruthy();
-        expect(item.snippet).toBeTruthy();
-        expect(item.sample).toBeTruthy();
+  it("each category has id, non-empty name, and items", () => {
+    for (const ref of [jaRef, enRef]) {
+      for (const cat of ref) {
+        expect(cat.id).toBeTruthy();
+        expect(cat.category).toBeTruthy();
+        expect(cat.items.length).toBeGreaterThan(0);
       }
     }
   });
 
-  it("has dedicated Mermaid category with multiple diagram types", () => {
-    const mermaidCat = MARKDOWN_REFERENCE.find(c => c.category === "Mermaid");
-    expect(mermaidCat).toBeDefined();
-    expect(mermaidCat!.items.length).toBeGreaterThanOrEqual(5);
-    const labels = mermaidCat!.items.map(i => i.label);
-    expect(labels).toContain("フローチャート");
-    expect(labels).toContain("シーケンス図");
-    expect(labels).toContain("円グラフ");
-  });
-
-  it("has dedicated PlantUML category with multiple diagram types", () => {
-    const pumlCat = MARKDOWN_REFERENCE.find(c => c.category === "PlantUML");
-    expect(pumlCat).toBeDefined();
-    expect(pumlCat!.items.length).toBeGreaterThanOrEqual(4);
-    const labels = pumlCat!.items.map(i => i.label);
-    expect(labels).toContain("シーケンス図");
-    expect(labels).toContain("クラス図");
-  });
-
-  it("has embed category with iframe items", () => {
-    const embedCat = MARKDOWN_REFERENCE.find(c => c.category === "埋め込み");
-    expect(embedCat).toBeDefined();
-    const labels = embedCat!.items.map(i => i.label);
-    expect(labels).toContain("YouTube");
-    expect(labels).toContain("Google Maps");
-    expect(labels).toContain("汎用 iframe");
-  });
-
-  it("has 文字色 category with preset colors and color picker support", () => {
-    const colorCat = MARKDOWN_REFERENCE.find(c => c.category === "文字色");
-    expect(colorCat).toBeDefined();
-    expect(colorCat!.items.length).toBeGreaterThanOrEqual(6);
-    const labels = colorCat!.items.map(i => i.label);
-    expect(labels).toContain("赤");
-    expect(labels).toContain("青");
-    expect(labels).toContain("緑");
-    expect(labels).toContain("背景色付き");
-    expect(labels).toContain("カスタムカラー");
-  });
-
-  it("文字色 items with preset colors have valid hex color field", () => {
-    const colorCat = MARKDOWN_REFERENCE.find(c => c.category === "文字色")!;
-    const itemsWithColor = colorCat.items.filter((i: any) => i.color);
-    expect(itemsWithColor.length).toBeGreaterThanOrEqual(5);
-    for (const item of itemsWithColor) {
-      expect((item as any).color).toMatch(/^#[0-9a-fA-F]{6}$/);
+  it("each item has label, syntax, snippet, and sample", () => {
+    for (const ref of [jaRef, enRef]) {
+      for (const cat of ref) {
+        for (const item of cat.items) {
+          expect(item.label).toBeTruthy();
+          expect(item.syntax).toBeTruthy();
+          expect(item.snippet).toBeTruthy();
+          expect(item.sample).toBeTruthy();
+        }
+      }
     }
   });
 
-  it("文字色 snippets contain span style tags", () => {
-    const colorCat = MARKDOWN_REFERENCE.find(c => c.category === "文字色")!;
-    for (const item of colorCat.items) {
-      expect(item.snippet).toContain("<span");
-      expect(item.snippet).toContain("style=");
+  it("both languages have same item count per category", () => {
+    for (let i = 0; i < jaRef.length; i++) {
+      expect(jaRef[i].items.length).toBe(enRef[i].items.length);
+    }
+  });
+
+  it("has dedicated Mermaid category with multiple diagram types", () => {
+    const jaMermaid = jaRef.find(c => c.id === "mermaid");
+    const enMermaid = enRef.find(c => c.id === "mermaid");
+    expect(jaMermaid).toBeDefined();
+    expect(enMermaid).toBeDefined();
+    expect(jaMermaid!.items.length).toBeGreaterThanOrEqual(5);
+
+    const jaLabels = jaMermaid!.items.map(i => i.label);
+    expect(jaLabels).toContain("フローチャート");
+    expect(jaLabels).toContain("シーケンス図");
+    expect(jaLabels).toContain("円グラフ");
+
+    const enLabels = enMermaid!.items.map(i => i.label);
+    expect(enLabels).toContain("Flowchart");
+    expect(enLabels).toContain("Sequence diagram");
+    expect(enLabels).toContain("Pie chart");
+  });
+
+  it("has dedicated PlantUML category with multiple diagram types", () => {
+    const jaPuml = jaRef.find(c => c.id === "plantuml");
+    const enPuml = enRef.find(c => c.id === "plantuml");
+    expect(jaPuml).toBeDefined();
+    expect(enPuml).toBeDefined();
+    expect(jaPuml!.items.length).toBeGreaterThanOrEqual(4);
+
+    const jaLabels = jaPuml!.items.map(i => i.label);
+    expect(jaLabels).toContain("シーケンス図");
+    expect(jaLabels).toContain("クラス図");
+
+    const enLabels = enPuml!.items.map(i => i.label);
+    expect(enLabels).toContain("Sequence diagram");
+    expect(enLabels).toContain("Class diagram");
+  });
+
+  it("has embed category with iframe items", () => {
+    const jaEmbed = jaRef.find(c => c.id === "embeds");
+    const enEmbed = enRef.find(c => c.id === "embeds");
+    expect(jaEmbed).toBeDefined();
+    expect(enEmbed).toBeDefined();
+
+    const jaLabels = jaEmbed!.items.map(i => i.label);
+    expect(jaLabels).toContain("YouTube");
+    expect(jaLabels).toContain("Google Maps");
+    expect(jaLabels).toContain("汎用 iframe");
+
+    const enLabels = enEmbed!.items.map(i => i.label);
+    expect(enLabels).toContain("YouTube");
+    expect(enLabels).toContain("Google Maps");
+    expect(enLabels).toContain("Generic iframe");
+  });
+
+  it("has textColor category with preset colors and color picker support", () => {
+    const jaColor = jaRef.find(c => c.id === "textColor");
+    const enColor = enRef.find(c => c.id === "textColor");
+    expect(jaColor).toBeDefined();
+    expect(enColor).toBeDefined();
+    expect(jaColor!.items.length).toBeGreaterThanOrEqual(6);
+
+    const jaLabels = jaColor!.items.map(i => i.label);
+    expect(jaLabels).toContain("赤");
+    expect(jaLabels).toContain("青");
+    expect(jaLabels).toContain("緑");
+    expect(jaLabels).toContain("背景色付き");
+    expect(jaLabels).toContain("カスタムカラー");
+
+    const enLabels = enColor!.items.map(i => i.label);
+    expect(enLabels).toContain("Red");
+    expect(enLabels).toContain("Blue");
+    expect(enLabels).toContain("Green");
+    expect(enLabels).toContain("Background");
+    expect(enLabels).toContain("Custom color");
+  });
+
+  it("textColor items with preset colors have valid hex color field", () => {
+    for (const ref of [jaRef, enRef]) {
+      const colorCat = ref.find(c => c.id === "textColor")!;
+      const itemsWithColor = colorCat.items.filter((i: any) => i.color);
+      expect(itemsWithColor.length).toBeGreaterThanOrEqual(5);
+      for (const item of itemsWithColor) {
+        expect((item as any).color).toMatch(/^#[0-9a-fA-F]{6}$/);
+      }
+    }
+  });
+
+  it("textColor snippets contain span style tags", () => {
+    for (const ref of [jaRef, enRef]) {
+      const colorCat = ref.find(c => c.id === "textColor")!;
+      for (const item of colorCat.items) {
+        expect(item.snippet).toContain("<span");
+        expect(item.snippet).toContain("style=");
+      }
     }
   });
 
   it("all snippets in Mermaid/PlantUML categories contain code fences", () => {
-    const diagramCats = MARKDOWN_REFERENCE.filter(c => c.category === "Mermaid" || c.category === "PlantUML");
-    for (const cat of diagramCats) {
-      for (const item of cat.items) {
-        expect(item.snippet).toContain("```");
+    for (const ref of [jaRef, enRef]) {
+      const diagramCats = ref.filter(c => c.id === "mermaid" || c.id === "plantuml");
+      for (const cat of diagramCats) {
+        for (const item of cat.items) {
+          expect(item.snippet).toContain("```");
+        }
       }
     }
   });

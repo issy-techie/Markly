@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "../ui/Modal";
+import { useI18n } from "../../hooks/useI18n";
 
 interface InputDialogProps {
   title: string;
@@ -18,6 +19,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const t = useI18n();
   const [value, setValue] = useState(defaultValue);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -48,13 +50,13 @@ const InputDialog: React.FC<InputDialogProps> = ({
             onClick={onCancel}
             className="px-3 py-1.5 text-xs rounded border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            キャンセル
+            {t.cancel}
           </button>
           <button
             onClick={() => onConfirm(value)}
             className="px-3 py-1.5 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
           >
-            OK
+            {t.ok}
           </button>
         </div>
       </div>

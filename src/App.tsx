@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from "react";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { undo, redo } from "@codemirror/commands";
 import mermaid from "mermaid";
@@ -9,8 +9,8 @@ import { openPath } from "@tauri-apps/plugin-opener";
 import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, exists, writeFile } from "@tauri-apps/plugin-fs";
 import "./App.css";
 
-import type { FileEntry, Tab, ContextMenuConfig } from "./types";
-import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, MARKDOWN_REFERENCE } from "./constants";
+import type { FileEntry, Tab, ContextMenuConfig, Language } from "./types";
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, getMarkdownReference } from "./constants";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { isProjectLocked } from "./utils/lockFile";
 import { saveCursorPosition } from "./utils/cursor";
@@ -36,6 +36,8 @@ import SettingsDialog from "./components/Dialogs/SettingsDialog";
 import AboutDialog from "./components/Dialogs/AboutDialog";
 import ContextMenu from "./components/Dialogs/ContextMenu";
 import InputDialog from "./components/Dialogs/InputDialog";
+import { getTranslations, LANGUAGE_OPTIONS } from "./i18n";
+import { I18nContext } from "./hooks/useI18n";
 
 // Mermaid initialization
 mermaid.initialize({ startOnLoad: true, theme: "default" });
@@ -47,7 +49,7 @@ function App() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showReference, setShowReference] = useState(false);
-  const [refActiveCategory, setRefActiveCategory] = useState(MARKDOWN_REFERENCE[0].category);
+  const [refActiveCategory, setRefActiveCategory] = useState("headings");
 
   // --- Shared refs ---
   const cursorPositionsRef = useRef<Record<string, number>>({});
@@ -67,6 +69,7 @@ function App() {
 
   const {
     isDark,
+    language, setLanguage,
     lineBreaks, setLineBreaks,
     lineWrapping, setLineWrapping,
     scrollSync, setScrollSync,
@@ -79,6 +82,18 @@ function App() {
     flushSaveConfig,
     toggleTheme,
   } = useConfig({ onError: configErrorHandler });
+
+  // i18n translations — memoized to avoid re-creating on every render
+  const t = useMemo(() => getTranslations(language ?? "ja"), [language]);
+
+  // Localized markdown reference data
+  const markdownRef = useMemo(() => getMarkdownReference(language ?? "ja"), [language]);
+
+  // Language selection handler for first-launch screen
+  const handleSelectLanguage = useCallback((lang: Language) => {
+    setLanguage(lang);
+    saveConfig({ language: lang });
+  }, [setLanguage, saveConfig]);
 
   const {
     sidebarWidth,
@@ -260,13 +275,13 @@ function App() {
     const unlistenClose = getCurrentWindow().onCloseRequested(async (event) => {
       event.preventDefault();
 
-      const hasModified = tabsRef.current.some(t => t.isModified);
+      const hasModified = tabsRef.current.some(tab => tab.isModified);
       if (hasModified) {
-        const ok = await ask("未保存の変更があります。変更を破棄して終了しますか？", {
-          title: "Markly - 終了の確認",
+        const ok = await ask(t.unsavedChangesConfirm, {
+          title: t.exitConfirmTitle,
           kind: "warning",
-          okLabel: "破棄して終了",
-          cancelLabel: "キャンセル"
+          okLabel: t.discardAndExit,
+          cancelLabel: t.cancel,
         });
         if (!ok) return;
       }
@@ -278,7 +293,7 @@ function App() {
     return () => {
       unlistenClose.then(f => f());
     };
-  }, [flushAppState, tabsRef]);
+  }, [flushAppState, tabsRef, t]);
 
   // --- Drag & drop (media insertion + copy to .assets folder) ---
   useEffect(() => {
@@ -287,7 +302,7 @@ function App() {
       if (pathsDropped.length === 0 || !editorViewRef.current) return;
 
       if (!activeTab?.path) {
-        addToast("メディアファイルをコピーするには、まずMarkdownファイルを保存してください", "warning");
+        addToast(t.saveFileFirstMedia, "warning");
         return;
       }
 
@@ -318,14 +333,14 @@ function App() {
         refreshTree();
       } catch (e) {
         console.error("Media copy failed:", e);
-        addToast("メディアファイルのコピーに失敗しました。ファイルパスや権限を確認してください", "error");
+        addToast(t.failedMediaCopy, "error");
       }
     });
 
     return () => {
       unlistenDrop.then(f => f());
     };
-  }, [activeTab, refreshTree]);
+  }, [activeTab, refreshTree, t]);
 
   // --- Keyboard shortcuts (table-driven) ---
   useEffect(() => {
@@ -391,7 +406,7 @@ function App() {
 
   // --- File operation functions ---
   const createFileInFolder = async (folderPath: string) => {
-    const name = await promptUser("新規ファイル名:", "newfile.md");
+    const name = await promptUser(t.newFileName, "newfile.md");
     if (!name) return;
     const fullPath = joinPath(folderPath, name);
     try {
@@ -400,13 +415,13 @@ function App() {
       openTargetFile(fullPath);
     } catch (e) {
       console.error("Failed to create file:", e);
-      addToast("ファイルの作成に失敗しました", "error");
+      addToast(t.failedCreateFile, "error");
     }
     setContextMenu(null);
   };
 
   const createFolderInFolder = async (folderPath: string) => {
-    const name = await promptUser("新規ディレクトリ名:", "new-folder");
+    const name = await promptUser(t.newFolderName, "new-folder");
     if (!name) return;
     const fullPath = joinPath(folderPath, name);
     try {
@@ -415,14 +430,14 @@ function App() {
       await refreshTree();
     } catch (e) {
       console.error("Failed to create folder:", e);
-      addToast("ディレクトリの作成に失敗しました", "error");
+      addToast(t.failedCreateFolder, "error");
     }
     setContextMenu(null);
   };
 
   const renameFile = async (oldPath: string) => {
     const oldName = getFileName(oldPath);
-    const newName = await promptUser("新しい名前:", oldName);
+    const newName = await promptUser(t.newNamePrompt, oldName);
     if (!newName || newName === oldName) return;
     const newPath = oldPath.substring(0, oldPath.lastIndexOf(oldName)) + newName;
     try {
@@ -492,7 +507,7 @@ function App() {
       await refreshTree();
     } catch (e) {
       console.error("Rename failed:", e);
-      addToast("名前の変更に失敗しました", "error");
+      addToast(t.failedRename, "error");
     }
     setContextMenu(null);
   };
@@ -509,7 +524,7 @@ function App() {
       await refreshTree();
     } catch (e) {
       console.error("Copy error:", e);
-      addToast("ファイルの複製に失敗しました", "error");
+      addToast(t.failedDuplicate, "error");
     }
     setContextMenu(null);
   };
@@ -535,7 +550,7 @@ function App() {
     }
 
     if (hasChildren) {
-      const ok = await ask(`ディレクトリ '${name}' は空ではありません。\n中のファイルを含めて完全に削除しますか？\nこの操作は取り消せません。`, { title: "一括削除の確認", kind: "warning" });
+      const ok = await ask(`'${name}' ${t.deleteFolderNotEmpty}`, { title: t.deleteBulkTitle, kind: "warning" });
       if (ok) {
         try {
           await remove(deletePath, { recursive: true });
@@ -552,11 +567,11 @@ function App() {
           await refreshTree();
         } catch (e) {
           console.error("Delete error:", e);
-          addToast("削除に失敗しました", "error");
+          addToast(t.failedDelete, "error");
         }
       }
     } else {
-      const ok = await ask(`'${name}' を削除しますか？\nこの操作は取り消せません。`, { title: "物理削除の確認", kind: "warning" });
+      const ok = await ask(`'${name}' ${t.deleteConfirm}`, { title: t.deletePhysicalTitle, kind: "warning" });
       if (ok) {
         try {
           await remove(deletePath, isDir ? { recursive: true } : undefined);
@@ -582,7 +597,7 @@ function App() {
              await refreshTree();
           } catch(err) {
              console.error("Delete error:", err);
-             addToast("削除に失敗しました", "error");
+             addToast(t.failedDelete, "error");
           }
         }
       }
@@ -615,7 +630,7 @@ function App() {
     e.preventDefault();
 
     if (!activeTab?.path) {
-      addToast("メディアをペーストするには、まずMarkdownファイルを保存してください", "warning");
+      addToast(t.saveFileFirstPaste, "warning");
       return;
     }
 
@@ -662,7 +677,7 @@ function App() {
       refreshTree();
     } catch (err) {
       console.error("Media paste failed:", err);
-      addToast("メディアの貼り付けに失敗しました", "error");
+      addToast(t.failedMediaPaste, "error");
     }
   };
 
@@ -682,16 +697,16 @@ function App() {
       const isExist = await exists(destPath);
 
       if (isExist) {
-        const overwrite = await ask(`'${destFileName}' は既に存在します。上書きしますか？`, {
-          title: "同名ファイルの確認",
+        const overwrite = await ask(`'${destFileName}' ${t.fileExistsOverwrite}`, {
+          title: t.overwriteConfirmTitle,
           kind: "warning",
-          okLabel: "上書き",
-          cancelLabel: "別名で保存"
+          okLabel: t.overwrite,
+          cancelLabel: t.saveAsAlternate,
         });
 
         if (!overwrite) {
           // Ask user for a new file name
-          const newName = await promptUser("新しいファイル名を入力してください（拡張子含む）:", originalFileName);
+          const newName = await promptUser(t.newMediaNamePrompt, originalFileName);
           if (!newName) return null;
           destFileName = newName;
           destPath = joinPath(assetsDir, destFileName);
@@ -703,7 +718,7 @@ function App() {
       return getFileName(destPath); // Return file name for Markdown insertion
     } catch (e) {
       console.error("Media copy failed:", e);
-      addToast("メディアファイルのコピーに失敗しました。ファイルパスや権限を確認してください", "error");
+      addToast(t.failedMediaCopy, "error");
       return null;
     }
   };
@@ -724,7 +739,12 @@ function App() {
       listen("menu-copy", () => document.execCommand("copy")),
       listen("menu-paste", () => document.execCommand("paste")),
       listen("menu-exit", async () => {
-        await confirmAndExit(tabsRef.current, flushAppState);
+        await confirmAndExit(tabsRef.current, flushAppState, {
+          message: t.unsavedChangesConfirm,
+          title: t.exitConfirmTitle,
+          okLabel: t.discardAndExit,
+          cancelLabel: t.cancel,
+        });
       }),
     ];
     return () => { unlisteners.forEach(async (u) => (await u)()); };
@@ -822,8 +842,13 @@ function App() {
 
   // --- Hamburger menu: Exit ---
   const handleExit = useCallback(async () => {
-    await confirmAndExit(tabsRef.current, flushAppState);
-  }, [flushAppState, tabsRef]);
+    await confirmAndExit(tabsRef.current, flushAppState, {
+      message: t.unsavedChangesConfirm,
+      title: t.exitConfirmTitle,
+      okLabel: t.discardAndExit,
+      cancelLabel: t.cancel,
+    });
+  }, [flushAppState, tabsRef, t]);
 
   // --- Open new window ---
   const handleNewWindow = useCallback(() => {
@@ -845,7 +870,7 @@ function App() {
     const locked = await isProjectLocked(selected);
     if (locked) {
       await ask(
-        "このディレクトリは別のMarklyインスタンスで開かれています。",
+        t.directoryLockedMessage,
         { title: "Markly", kind: "warning" }
       );
       return;
@@ -900,7 +925,7 @@ function App() {
             isModified: false,
           });
         } catch {
-          addToast(`ファイルの復元に失敗: ${getFileName(filePath)}`, "warning");
+          addToast(`${t.failedFileRestore}: ${getFileName(filePath)}`, "warning");
         }
       }
 
@@ -921,10 +946,40 @@ function App() {
     saveCurrentSession, releaseCurrentLock, acquireProjectLock,
     loadSessionForProject, setProjectRoot, loadDirectory, setFileTree,
     loadChildren, setExpandedFolders, setTabs, setActiveId,
-    addToast,
+    addToast, t,
   ]);
 
+  // --- First-launch language selection ---
+  if (language === null) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-900 text-slate-200 font-sans">
+        <div className="w-80 text-center space-y-6">
+          <div className="text-4xl font-bold tracking-tighter italic text-blue-400">Markly</div>
+          <h2 className="text-lg font-semibold">
+            言語を選択 / Select Language
+          </h2>
+          <p className="text-sm text-slate-400 whitespace-pre-line">
+            Marklyで使用する言語を選択してください。{"\n"}Choose the language for Markly.{"\n"}
+            <span className="text-xs text-slate-500">この設定は後から変更できます / You can change this later in Settings.</span>
+          </p>
+          <div className="flex flex-col gap-3">
+            {LANGUAGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleSelectLanguage(opt.value)}
+                className="px-6 py-3 rounded-lg bg-slate-800 border border-slate-700 hover:border-blue-500 hover:bg-slate-700 transition-all text-base font-medium"
+              >
+                {opt.nativeLabel}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
+    <I18nContext.Provider value={t}>
     <div className={`flex h-screen w-screen bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 overflow-hidden font-sans relative ${isResizing ? "select-none" : ""}`}>
 
       {/* 1. Sidebar */}
@@ -1037,12 +1092,13 @@ function App() {
               onSetRefActiveCategory={setRefActiveCategory}
               onCloseReference={() => setShowReference(false)}
               onInsertSnippet={insertSnippet}
+              markdownReference={markdownRef}
             />
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
             <div className="text-6xl mb-4 font-bold opacity-10 select-none tracking-tighter italic pointer-events-none">Markly</div>
-            <div className="text-sm uppercase tracking-widest opacity-30 font-bold">Select a file to edit</div>
+            <div className="text-sm uppercase tracking-widest opacity-30 font-bold">{t.selectFileToEdit}</div>
           </div>
         )}
       </div>
@@ -1087,6 +1143,8 @@ function App() {
         <SettingsDialog
           isDark={isDark}
           toggleTheme={toggleTheme}
+          language={language!}
+          setLanguage={(lang) => { setLanguage(lang); saveConfig({ language: lang }); }}
           lineBreaks={lineBreaks}
           setLineBreaks={setLineBreaks}
           lineWrapping={lineWrapping}
@@ -1126,6 +1184,7 @@ function App() {
         />
       )}
     </div>
+    </I18nContext.Provider>
   );
 }
 

@@ -1,16 +1,18 @@
 import React from "react";
 import { X } from "lucide-react";
 import Modal from "../ui/Modal";
+import { useI18n } from "../../hooks/useI18n";
 
 interface AboutDialogProps {
   onClose: () => void;
 }
 
 const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
+  const t = useI18n();
   return (
     <Modal onClose={onClose} className="w-[320px] text-center">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-        <span className="font-bold text-sm">バージョン情報</span>
+        <span className="font-bold text-sm">{t.aboutTitle}</span>
         <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><X size={16} /></button>
       </div>
       <div className="p-6 space-y-3">
