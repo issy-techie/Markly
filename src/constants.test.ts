@@ -56,9 +56,13 @@ describe("DEFAULT_CONFIG", () => {
     expect(DEFAULT_CONFIG.previewFontFamily.length).toBeGreaterThan(0);
   });
 
-  it("has scrollSync as boolean defaulting to false", () => {
+  it("has scrollSync as boolean defaulting to true", () => {
     expect(typeof DEFAULT_CONFIG.scrollSync).toBe("boolean");
-    expect(DEFAULT_CONFIG.scrollSync).toBe(false);
+    expect(DEFAULT_CONFIG.scrollSync).toBe(true);
+  });
+
+  it("has language defaulting to null (first launch trigger)", () => {
+    expect(DEFAULT_CONFIG.language).toBeNull();
   });
 
   it("has empty session state by default", () => {

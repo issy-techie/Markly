@@ -1,6 +1,7 @@
 import React from "react";
 import { FileText, FolderOpen, FolderPlus, FilePlus, RefreshCw, ExternalLink } from "lucide-react";
 import type { Tab, FileEntry } from "../../types";
+import { useI18n } from "../../hooks/useI18n";
 import FileTreeNode from "../FileTreeNode";
 
 interface SidebarProps {
@@ -54,6 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onTabClick,
   onResizeMouseDown,
 }) => {
+  const t = useI18n();
   return (
     <aside
       ref={sidebarRef}
@@ -63,13 +65,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
         Explorer
         <div className="flex gap-1">
-          <button onClick={onRefreshTree} title="更新" disabled={isRefreshing}>
+          <button onClick={onRefreshTree} title={t.refresh} disabled={isRefreshing}>
             <RefreshCw size={14} className={`hover:text-blue-500 transition-colors ${isRefreshing ? "animate-spin text-blue-500" : ""}`} />
           </button>
-          <button onClick={() => projectRoot && onCreateFile(projectRoot)} title="ルートにファイル作成"><FilePlus size={14} className="hover:text-blue-500" /></button>
-          <button onClick={() => projectRoot && onCreateFolder(projectRoot)} title="ルートにディレクトリ作成"><FolderPlus size={14} className="hover:text-blue-500" /></button>
-          <button onClick={onOpenFolder} title="フォルダを開く"><FolderOpen size={14} className="hover:text-blue-500" /></button>
-          <button onClick={onNewWindow} title="新しいウィンドウで開く"><ExternalLink size={14} className="hover:text-blue-500" /></button>
+          <button onClick={() => projectRoot && onCreateFile(projectRoot)} title={t.createFileInRoot}><FilePlus size={14} className="hover:text-blue-500" /></button>
+          <button onClick={() => projectRoot && onCreateFolder(projectRoot)} title={t.createFolderInRoot}><FolderPlus size={14} className="hover:text-blue-500" /></button>
+          <button onClick={onOpenFolder} title={t.openFolder}><FolderOpen size={14} className="hover:text-blue-500" /></button>
+          <button onClick={onNewWindow} title={t.newWindow}><ExternalLink size={14} className="hover:text-blue-500" /></button>
         </div>
       </div>
 
@@ -97,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           ))
         ) : (
           <div className="px-6 py-10 text-xs text-slate-400 text-center leading-loose italic opacity-50">
-            フォルダ未選択 <button onClick={onOpenFolder} className="block mx-auto mt-2 text-blue-500 font-bold underline not-italic opacity-100">開く</button>
+            {t.noFolderSelected} <button onClick={onOpenFolder} className="block mx-auto mt-2 text-blue-500 font-bold underline not-italic opacity-100">{t.open}</button>
           </div>
         )}
       </div>

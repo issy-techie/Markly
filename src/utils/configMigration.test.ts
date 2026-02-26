@@ -105,6 +105,11 @@ describe("migrateLegacyConfig", () => {
     expect(result.scrollSync).toBe(false);
   });
 
+  it("sets language to null for migrated configs (triggers first-launch selector)", () => {
+    const result = migrateLegacyConfig(createLegacyConfig());
+    expect(result.language).toBeNull();
+  });
+
   it("does not include old flat session fields in result", () => {
     const result = migrateLegacyConfig(createLegacyConfig());
 

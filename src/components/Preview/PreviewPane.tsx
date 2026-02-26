@@ -6,6 +6,7 @@ import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import { MARKDOWN_REFERENCE } from "../../constants";
 import { createMarkdownComponents } from "./MarkdownRenderers";
+import { useI18n } from "../../hooks/useI18n";
 
 interface PreviewPaneProps {
   content: string;
@@ -34,6 +35,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
   onCloseReference,
   onInsertSnippet,
 }, ref) => {
+  const t = useI18n();
   const markdownComponents = useMemo(
     () => createMarkdownComponents({ activeFilePath, isDark }),
     [activeFilePath, isDark]
@@ -96,7 +98,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
               <div className="mb-3 p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 shadow-sm animate-in fade-in duration-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Pipette size={12} className="text-slate-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">カラーピッカー</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t.colorPicker}</span>
                 </div>
                 {/* Mode toggle */}
                 <div className="flex gap-1 mb-2">
@@ -108,7 +110,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                         : "bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-500"
                     }`}
                   >
-                    文字色
+                    {t.textColor}
                   </button>
                   <button
                     onClick={() => setPickerMode("bg")}
@@ -118,7 +120,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                         : "bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-500"
                     }`}
                   >
-                    背景色
+                    {t.bgColor}
                   </button>
                 </div>
                 {/* Color wheel + HEX input */}
@@ -128,7 +130,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                     value={pickerColor}
                     onChange={(e) => setPickerColor(e.target.value)}
                     className="w-8 h-8 rounded cursor-pointer border border-slate-300 dark:border-slate-500 p-0"
-                    title="カラーホイールで色を選択"
+                    title={t.colorPicker}
                   />
                   <input
                     type="text"
@@ -145,9 +147,9 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                 {/* Preview */}
                 <div className="mb-2 p-2 rounded bg-slate-50 dark:bg-slate-800 text-[11px] text-center">
                   {pickerMode === "text" ? (
-                    <span style={{ color: pickerColor }}>プレビューテキスト — {pickerColor}</span>
+                    <span style={{ color: pickerColor }}>Preview — {pickerColor}</span>
                   ) : (
-                    <span style={{ backgroundColor: pickerColor, padding: "0 4px", borderRadius: "2px" }}>プレビューテキスト — {pickerColor}</span>
+                    <span style={{ backgroundColor: pickerColor, padding: "0 4px", borderRadius: "2px" }}>Preview — {pickerColor}</span>
                   )}
                 </div>
                 {/* Insert button */}
@@ -155,7 +157,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                   onClick={handleInsertPickerColor}
                   className="w-full text-[11px] py-1.5 rounded bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors"
                 >
-                  この色で挿入
+                  {t.insertThisColor}
                 </button>
               </div>
             )}
@@ -190,7 +192,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
           </div>
         </div>
         <div className="p-3 bg-slate-100/30 dark:bg-slate-900/10 border-t border-slate-200 dark:border-slate-700 shrink-0">
-          <p className="text-[10px] text-slate-400 leading-tight">項目をクリックするとカーソル位置にテンプレートが挿入されます。</p>
+          <p className="text-[10px] text-slate-400 leading-tight">{t.referenceFooter}</p>
         </div>
       </div>
     </div>

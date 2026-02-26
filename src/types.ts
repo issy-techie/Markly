@@ -8,9 +8,12 @@ export interface SessionData {
   cursorPositions: Record<string, number>;
 }
 
+export type Language = "ja" | "en";
+
 export interface AppConfig {
   // User preferences (global, shared across all projects)
   theme: "light" | "dark";
+  language: Language | null;  // null = first launch (show language selector)
   sidebarWidth: number;
   editorWidthPercent: number;
   openTabsHeight: number;

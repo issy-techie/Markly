@@ -3,14 +3,18 @@ import { X, Settings, Sun, Moon, LogOut } from "lucide-react";
 import { open, save, ask } from "@tauri-apps/plugin-dialog";
 import { copyFile } from "@tauri-apps/plugin-fs";
 import { appDataDir, join } from "@tauri-apps/api/path";
-import type { AppConfig } from "../../types";
+import type { AppConfig, Language } from "../../types";
 import { FONT_OPTIONS, PREVIEW_FONT_OPTIONS } from "../../constants";
+import { LANGUAGE_OPTIONS } from "../../i18n";
+import { useI18n } from "../../hooks/useI18n";
 import Modal from "../ui/Modal";
 import ToggleSwitch from "../ui/ToggleSwitch";
 
 interface SettingsDialogProps {
   isDark: boolean;
   toggleTheme: () => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
   lineBreaks: boolean;
   setLineBreaks: (v: boolean) => void;
   lineWrapping: boolean;
@@ -34,6 +38,8 @@ interface SettingsDialogProps {
 const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isDark,
   toggleTheme,
+  language,
+  setLanguage,
   lineBreaks,
   setLineBreaks,
   lineWrapping,
@@ -53,6 +59,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
   applyConfig,
   onClose,
 }) => {
+  const t = useI18n();
+
   const handleExport = async () => {
     try {
       const path = await save({ filters: [{ name: "JSON", extensions: ["json"] }], defaultPath: "markly-config.json" });
@@ -60,11 +68,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         const appData = await appDataDir();
         const configPath = await join(appData, "config.json");
         await copyFile(configPath, path);
-        await ask("設定をエクスポートしました", { title: "Markly", kind: "info" });
+        await ask(t.settingsExported, { title: "Markly", kind: "info" });
       }
     } catch (e) {
       console.error(e);
-      await ask(`エクスポートに失敗しました: ${e}`, { title: "Error", kind: "error" });
+      await ask(`${t.exportFailed}: ${e}`, { title: "Error", kind: "error" });
     }
   };
 
@@ -77,41 +85,55 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         await copyFile(path, configPath);
         const loaded = await loadConfig();
         if (loaded) applyConfig(loaded);
-        await ask("設定をインポートしました", { title: "Markly", kind: "info" });
+        await ask(t.settingsImported, { title: "Markly", kind: "info" });
       }
     } catch (e) {
       console.error(e);
-      await ask(`インポートに失敗しました: ${e}`, { title: "Error", kind: "error" });
+      await ask(`${t.importFailed}: ${e}`, { title: "Error", kind: "error" });
     }
   };
 
   return (
     <Modal onClose={onClose} className="w-96">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-          <span className="font-bold text-sm flex items-center gap-2"><Settings size={16} /> 設定</span>
+          <span className="font-bold text-sm flex items-center gap-2"><Settings size={16} /> {t.settings}</span>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><X size={16} /></button>
         </div>
 
         <div className="p-4 space-y-6">
           {/* Theme setting */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">テーマ</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.theme}</span>
             <button
               onClick={toggleTheme}
               className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-xs"
             >
               {isDark ? <Sun size={14} className="text-yellow-400" /> : <Moon size={14} className="text-slate-600" />}
-              {isDark ? "ダーク" : "ライト"}
+              {isDark ? t.dark : t.light}
             </button>
+          </div>
+
+          {/* Language setting */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.language}</span>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as Language)}
+              className="px-2 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-300"
+            >
+              {LANGUAGE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.nativeLabel}</option>
+              ))}
+            </select>
           </div>
 
           <div className="border-t border-slate-200 dark:border-slate-700"></div>
 
           {/* Editor settings */}
           <div>
-            <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">エディタ設定</h3>
+            <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">{t.editorSettings}</h3>
             <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-sm text-slate-700 dark:text-slate-300">改行をそのまま反映</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">{t.lineBreaksLabel}</span>
               <ToggleSwitch
                 checked={lineBreaks}
                 onChange={(newVal) => {
@@ -122,7 +144,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             </label>
 
             <label className="flex items-center justify-between cursor-pointer mt-3">
-              <span className="text-sm text-slate-700 dark:text-slate-300">行の折り返し</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">{t.lineWrappingLabel}</span>
               <ToggleSwitch
                 checked={lineWrapping}
                 onChange={(newVal) => {
@@ -133,7 +155,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             </label>
 
             <label className="flex items-center justify-between cursor-pointer mt-3">
-              <span className="text-sm text-slate-700 dark:text-slate-300">スクロール同期</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">{t.scrollSyncLabel}</span>
               <ToggleSwitch
                 checked={scrollSync}
                 onChange={(newVal) => {
@@ -144,7 +166,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             </label>
 
             <div className="mt-3">
-              <span className="text-sm text-slate-700 dark:text-slate-300 block mb-1">エディタフォント</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300 block mb-1">{t.editorFont}</span>
               <select
                 value={editorFontFamily}
                 onChange={(e) => {
@@ -159,7 +181,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 ))}
               </select>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">サイズ</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{t.fontSize}</span>
                 <input
                   type="range"
                   min={10}
@@ -177,7 +199,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             </div>
 
             <div className="mt-3">
-              <span className="text-sm text-slate-700 dark:text-slate-300 block mb-1">プレビューフォント</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300 block mb-1">{t.previewFont}</span>
               <select
                 value={previewFontFamily}
                 onChange={(e) => {
@@ -192,7 +214,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 ))}
               </select>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">サイズ</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{t.fontSize}</span>
                 <input
                   type="range"
                   min={10}
@@ -214,19 +236,19 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
           {/* Settings management */}
           <div>
-            <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">設定管理</h3>
+            <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">{t.settingsManagement}</h3>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleExport}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-700 dark:text-slate-200"
               >
-                <LogOut size={14} className="rotate-180" /> エクスポート
+                <LogOut size={14} className="rotate-180" /> {t.exportSettings}
               </button>
               <button
                 onClick={handleImport}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm transition-colors"
               >
-                <LogOut size={14} className="rotate-90" /> インポート
+                <LogOut size={14} className="rotate-90" /> {t.importSettings}
               </button>
             </div>
           </div>
@@ -237,7 +259,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             onClick={onClose}
             className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
-            閉じる
+            {t.close}
           </button>
         </div>
     </Modal>

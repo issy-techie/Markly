@@ -12,13 +12,14 @@ export const RESIZE = {
 
 // --- Default configuration ---
 export const DEFAULT_CONFIG: AppConfig = {
-  theme: "light",
+  theme: "dark",
   sidebarWidth: 250,
   editorWidthPercent: 50,
   openTabsHeight: 192,
-  lineBreaks: false,
+  lineBreaks: true,
   lineWrapping: true,
-  scrollSync: false,
+  scrollSync: true,
+  language: null,
   editorFontFamily: "monospace",
   editorFontSize: 14,
   previewFontFamily: "sans-serif",
