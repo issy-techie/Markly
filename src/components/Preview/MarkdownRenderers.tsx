@@ -25,6 +25,7 @@ const isSafeUrl = (url: string): boolean => {
  * Create custom renderers for ReactMarkdown.
  * - a: Open links in the external browser via Tauri's openUrl
  * - img: Convert relative paths to Tauri asset URLs
+ * - video: Convert relative paths to Tauri asset URLs for video playback
  * - code: Render mermaid / PlantUML diagrams
  */
 export const createMarkdownComponents = ({
@@ -56,6 +57,22 @@ export const createMarkdownComponents = ({
     const resolvedPath = `${baseDir}/${relativePath}`;
     const assetUrl = convertFileSrc(resolvedPath);
     return <img src={assetUrl} alt={alt} {...props} className="max-w-full rounded shadow-md my-4 h-auto" />;
+  },
+
+  video({ src, ...props }: any) {
+    if (!src || !activeFilePath) return null;
+    const decodedSrc = decodeURIComponent(src);
+
+    // Pass through remote URLs directly
+    if (decodedSrc.startsWith("http://") || decodedSrc.startsWith("https://")) {
+      return <video src={decodedSrc} {...props} controls className="max-w-full rounded shadow-md my-4" />;
+    }
+
+    const baseDir = activeFilePath.replace(/\\/g, "/").replace(/\/[^/]+$/, "");
+    const relativePath = decodedSrc.startsWith("./") ? decodedSrc.substring(2) : decodedSrc;
+    const resolvedPath = `${baseDir}/${relativePath}`;
+    const assetUrl = convertFileSrc(resolvedPath);
+    return <video src={assetUrl} {...props} controls className="max-w-full rounded shadow-md my-4" />;
   },
 
   code({ inline, className, children }: any) {

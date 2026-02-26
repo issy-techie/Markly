@@ -1,7 +1,7 @@
 import React from "react";
-import { FileText, FolderPlus, ChevronRight, ChevronDown, Folder, Edit2, Trash2, FilePlus, Image as ImageIcon, Loader2 } from "lucide-react";
+import { FileText, FolderPlus, ChevronRight, ChevronDown, Folder, Edit2, Trash2, FilePlus, Image as ImageIcon, Video, Loader2 } from "lucide-react";
 import type { FileEntry } from "../types";
-import { IMAGE_EXTENSIONS } from "../constants";
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "../constants";
 
 interface FileTreeNodeProps {
   entry: FileEntry;
@@ -36,6 +36,7 @@ const FileTreeNode = React.memo(({
   const isLoading = loadingFolders.has(entry.path);
   const ext = entry.name.toLowerCase().substring(entry.name.lastIndexOf('.'));
   const isImage = IMAGE_EXTENSIONS.includes(ext);
+  const isVideo = VIDEO_EXTENSIONS.includes(ext);
   const isActive = activeFilePath === entry.path;
 
   const childProps = {
@@ -78,7 +79,7 @@ const FileTreeNode = React.memo(({
             <Folder size={14} className="text-blue-500 fill-blue-500/20" />
           </>
         ) : (
-          <>{isImage ? <ImageIcon size={14} className="text-emerald-500" /> : <FileText size={14} className="text-slate-400" />}</>
+          <>{isImage ? <ImageIcon size={14} className="text-emerald-500" /> : isVideo ? <Video size={14} className="text-purple-500" /> : <FileText size={14} className="text-slate-400" />}</>
         )}
         <span className="truncate flex-1 select-none">{entry.name}</span>
 

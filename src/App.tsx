@@ -10,7 +10,7 @@ import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, 
 import "./App.css";
 
 import type { FileEntry, Tab, ContextMenuConfig } from "./types";
-import { IMAGE_EXTENSIONS, MARKDOWN_REFERENCE } from "./constants";
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, MARKDOWN_REFERENCE } from "./constants";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { isProjectLocked } from "./utils/lockFile";
 import { saveCursorPosition } from "./utils/cursor";
@@ -238,29 +238,34 @@ function App() {
     };
   }, [flushAppState, tabsRef]);
 
-  // --- Drag & drop (image insertion + copy to .assets folder) ---
+  // --- Drag & drop (media insertion + copy to .assets folder) ---
   useEffect(() => {
     const unlistenDrop = listen("tauri://drag-drop", async (event: any) => {
       const pathsDropped = event.payload.paths as string[];
       if (pathsDropped.length === 0 || !editorViewRef.current) return;
 
       if (!activeTab?.path) {
-        addToast("画像をコピーするには、まずMarkdownファイルを保存してください", "warning");
+        addToast("メディアファイルをコピーするには、まずMarkdownファイルを保存してください", "warning");
         return;
       }
 
       const rawDroppedPath = decodeURIComponent(pathsDropped[0]);
       const ext = getExtension(rawDroppedPath).toLowerCase();
-      if (!IMAGE_EXTENSIONS.includes(ext)) return;
+      const isImage = IMAGE_EXTENSIONS.includes(ext);
+      const isVideo = VIDEO_EXTENSIONS.includes(ext);
+      if (!isImage && !isVideo) return;
 
       try {
         const baseDir = getDirName(activeTab.path);
         const mdFileName = getFileName(activeTab.path);
-        const fileName = await copyImageFile(rawDroppedPath, baseDir, mdFileName);
+        const fileName = await copyMediaFile(rawDroppedPath, baseDir, mdFileName);
         if (!fileName) return;
 
         const assetsName = mdFileName.replace(/\.md$/, ".assets");
-        const insertText = `![image](./${assetsName}/${encodeURIComponent(fileName)})`;
+        const encodedFileName = encodeURIComponent(fileName);
+        const insertText = isImage
+          ? `![image](./${assetsName}/${encodedFileName})`
+          : `<video src="./${assetsName}/${encodedFileName}" controls width="100%"></video>`;
         const view = editorViewRef.current!;
         const cursor = view.state.selection.main.head;
         view.dispatch({
@@ -270,8 +275,8 @@ function App() {
 
         refreshTree();
       } catch (e) {
-        console.error("Image copy failed:", e);
-        addToast("画像のコピーに失敗しました。ファイルパスや権限を確認してください", "error");
+        console.error("Media copy failed:", e);
+        addToast("メディアファイルのコピーに失敗しました。ファイルパスや権限を確認してください", "error");
       }
     });
 
@@ -493,6 +498,15 @@ function App() {
         try {
           await remove(deletePath, { recursive: true });
           setTabs(prev => prev.filter(t => t.path !== deletePath && !t.path?.startsWith(deletePath + '/') && !t.path?.startsWith(deletePath + '\\')));
+          setExpandedFolders(prev => {
+            const next = new Set<string>();
+            for (const p of prev) {
+              if (p !== deletePath && !p.startsWith(deletePath + '/') && !p.startsWith(deletePath + '\\')) {
+                next.add(p);
+              }
+            }
+            return next;
+          });
           await refreshTree();
         } catch (e) {
           console.error("Delete error:", e);
@@ -505,12 +519,24 @@ function App() {
         try {
           await remove(deletePath, isDir ? { recursive: true } : undefined);
           setTabs(prev => prev.filter(t => t.path !== deletePath));
+          if (isDir) {
+            setExpandedFolders(prev => {
+              const next = new Set(prev);
+              next.delete(deletePath);
+              return next;
+            });
+          }
           await refreshTree();
         } catch {
           // Fallback: retry with recursive option
           try {
              await remove(deletePath, { recursive: true });
              setTabs(prev => prev.filter(t => t.path !== deletePath));
+             setExpandedFolders(prev => {
+               const next = new Set(prev);
+               next.delete(deletePath);
+               return next;
+             });
              await refreshTree();
           } catch(err) {
              console.error("Delete error:", err);
@@ -522,30 +548,36 @@ function App() {
     setContextMenu(null);
   };
 
-  // Paste image data from clipboard and save to .assets folder
+  // Paste media data from clipboard and save to .assets folder
   const handlePaste = async (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
 
     let imageItem: DataTransferItem | null = null;
+    let videoItem: DataTransferItem | null = null;
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.startsWith("image/")) {
         imageItem = items[i];
         break;
       }
+      if (items[i].type.startsWith("video/")) {
+        videoItem = items[i];
+        break;
+      }
     }
 
-    if (!imageItem) return;
+    const mediaItem = imageItem || videoItem;
+    if (!mediaItem) return;
 
-    // Prevent default paste when an image is detected
+    // Prevent default paste when media is detected
     e.preventDefault();
 
     if (!activeTab?.path) {
-      addToast("画像をペーストするには、まずMarkdownファイルを保存してください", "warning");
+      addToast("メディアをペーストするには、まずMarkdownファイルを保存してください", "warning");
       return;
     }
 
-    const file = imageItem.getAsFile();
+    const file = mediaItem.getAsFile();
     if (!file) return;
 
     const baseDir = getDirName(activeTab.path);
@@ -556,9 +588,17 @@ function App() {
     try {
       await mkdir(assetsDir, { recursive: true });
 
-      const ext = file.type === "image/jpeg" ? ".jpg" : ".png";
+      let ext: string;
+      let prefix: string;
+      if (imageItem) {
+        ext = file.type === "image/jpeg" ? ".jpg" : ".png";
+        prefix = "pasted-image";
+      } else {
+        ext = VIDEO_MIME_MAP[file.type] || ".mp4";
+        prefix = "pasted-video";
+      }
       const timestamp = new Date().getTime();
-      const destFileName = `pasted-image-${timestamp}${ext}`;
+      const destFileName = `${prefix}-${timestamp}${ext}`;
       const destPath = joinPath(assetsDir, destFileName);
 
       const arrayBuffer = await file.arrayBuffer();
@@ -566,7 +606,10 @@ function App() {
 
       if (editorViewRef.current) {
         const view = editorViewRef.current;
-        const insertText = `![image](./${assetsName}/${encodeURIComponent(destFileName)})`;
+        const encodedName = encodeURIComponent(destFileName);
+        const insertText = imageItem
+          ? `![image](./${assetsName}/${encodedName})`
+          : `<video src="./${assetsName}/${encodedName}" controls width="100%"></video>`;
         const cursor = view.state.selection.main.head;
         view.dispatch({
           changes: { from: cursor, insert: insertText },
@@ -576,13 +619,13 @@ function App() {
 
       refreshTree();
     } catch (err) {
-      console.error("Image paste failed:", err);
-      addToast("画像の貼り付けに失敗しました", "error");
+      console.error("Media paste failed:", err);
+      addToast("メディアの貼り付けに失敗しました", "error");
     }
   };
 
-  // Copy image file to {filename}.assets folder
-  const copyImageFile = async (rawDroppedPath: string, baseDir: string, mdFileName: string) => {
+  // Copy media file to {filename}.assets folder
+  const copyMediaFile = async (rawDroppedPath: string, baseDir: string, mdFileName: string) => {
     const assetsName = mdFileName.replace(/\.md$/, ".assets");
     const assetsDir = joinPath(baseDir, assetsName);
     await mkdir(assetsDir, { recursive: true });
@@ -617,8 +660,8 @@ function App() {
 
       return getFileName(destPath); // Return file name for Markdown insertion
     } catch (e) {
-      console.error("Image copy failed:", e);
-      addToast("画像のコピーに失敗しました。ファイルパスや権限を確認してください", "error");
+      console.error("Media copy failed:", e);
+      addToast("メディアファイルのコピーに失敗しました。ファイルパスや権限を確認してください", "error");
       return null;
     }
   };
