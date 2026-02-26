@@ -93,6 +93,19 @@ export const MARKDOWN_REFERENCE = [
     ]
   },
   {
+    category: "文字色",
+    items: [
+      { label: "赤", syntax: '<span style="color:red">', snippet: '<span style="color: #e74c3c">$1</span>', sample: "警告・重要な注意書き", color: "#e74c3c" },
+      { label: "青", syntax: '<span style="color:blue">', snippet: '<span style="color: #3498db">$1</span>', sample: "リンク風テキスト・情報", color: "#3498db" },
+      { label: "緑", syntax: '<span style="color:green">', snippet: '<span style="color: #27ae60">$1</span>', sample: "成功・完了ステータス", color: "#27ae60" },
+      { label: "オレンジ", syntax: '<span style="color:orange">', snippet: '<span style="color: #f39c12">$1</span>', sample: "注意・警告レベルの情報", color: "#f39c12" },
+      { label: "紫", syntax: '<span style="color:purple">', snippet: '<span style="color: #9b59b6">$1</span>', sample: "特別・ハイライト表示", color: "#9b59b6" },
+      { label: "グレー", syntax: '<span style="color:gray">', snippet: '<span style="color: #95a5a6">$1</span>', sample: "補足・注釈テキスト", color: "#95a5a6" },
+      { label: "背景色付き", syntax: '<span style="background:yellow">', snippet: '<span style="background-color: #ffeaa7; padding: 0 4px; border-radius: 2px">$1</span>', sample: "マーカー風の背景ハイライト", color: "#ffeaa7" },
+      { label: "カスタムカラー", syntax: '<span style="color:#hex">', snippet: '<span style="color: #$1">テキスト</span>', sample: "任意の色を HEX で指定" },
+    ]
+  },
+  {
     category: "リスト",
     items: [
       { label: "箇条書き", syntax: "- Item", snippet: "- 項目1\n- 項目2\n- 項目3", sample: "順序のないリスト" },
