@@ -40,26 +40,29 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
   );
 
   return (
-    <div ref={ref} className={`p-8 overflow-y-auto preview-area custom-scrollbar flex-1 relative ${isDark ? "prose prose-invert bg-slate-900" : "prose bg-slate-50"}`} style={{ fontFamily: previewFontFamily, fontSize: `${previewFontSize}px` }}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, ...(lineBreaks ? [remarkBreaks] : [])]}
-        rehypePlugins={[rehypeRaw]}
-        components={markdownComponents}
-      >
-        {content}
-      </ReactMarkdown>
+    <div className="flex-1 relative overflow-hidden flex">
+      {/* Scrollable preview content */}
+      <div ref={ref} className={`p-8 overflow-y-auto preview-area custom-scrollbar flex-1 ${isDark ? "prose prose-invert bg-slate-900" : "prose bg-slate-50"}`} style={{ fontFamily: previewFontFamily, fontSize: `${previewFontSize}px` }}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, ...(lineBreaks ? [remarkBreaks] : [])]}
+          rehypePlugins={[rehypeRaw]}
+          components={markdownComponents}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
 
-      {/* Reference panel (Slide-in drawer) */}
+      {/* Reference panel (Slide-in drawer) — positioned relative to non-scrolling wrapper */}
       <div className={`absolute top-0 right-0 h-full w-64 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md border-l border-slate-200 dark:border-slate-700 shadow-2xl z-40 transition-transform duration-300 ease-in-out transform flex flex-col ${showReference ? "translate-x-0" : "translate-x-full"}`}>
-        <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-100/50 dark:bg-slate-900/50">
+        <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-100/50 dark:bg-slate-900/50 shrink-0">
           <span className="text-xs font-bold tracking-widest uppercase text-slate-500">Reference</span>
           <button onClick={onCloseReference} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
             <X size={14} className="text-slate-400" />
           </button>
         </div>
-        <div className="flex flex-col h-full">
+        <div className="flex-1 min-h-0 flex flex-col">
           {/* Category Tabs */}
-          <div className="flex overflow-x-auto tab-scrollbar bg-slate-100/30 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 px-2 pt-1 no-scrollbar">
+          <div className="flex overflow-x-auto tab-scrollbar bg-slate-100/30 dark:bg-slate-900/30 border-b border-slate-200 dark:border-slate-700 px-2 pt-1 no-scrollbar shrink-0">
             {MARKDOWN_REFERENCE.map((cat) => (
               <button
                 key={cat.category}
@@ -75,7 +78,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 custom-scrollbar">
             {MARKDOWN_REFERENCE.filter(cat => cat.category === refActiveCategory).map((cat, idx) => (
               <div key={idx} className="animate-in fade-in slide-in-from-right-2 duration-200">
                 <div className="grid grid-cols-1 gap-1">
@@ -90,6 +93,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                         <Plus size={10} className="text-slate-300 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all" />
                       </div>
                       <code className="text-[9px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded truncate w-full">{item.syntax}</code>
+                      {item.sample && <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">{item.sample}</span>}
                     </button>
                   ))}
                 </div>
@@ -97,8 +101,8 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
             ))}
           </div>
         </div>
-        <div className="p-3 bg-slate-100/30 dark:bg-slate-900/10 border-t border-slate-200 dark:border-slate-700">
-          <p className="text-[10px] text-slate-400 leading-tight">Click an item to insert its template at the cursor position.</p>
+        <div className="p-3 bg-slate-100/30 dark:bg-slate-900/10 border-t border-slate-200 dark:border-slate-700 shrink-0">
+          <p className="text-[10px] text-slate-400 leading-tight">項目をクリックするとカーソル位置にテンプレートが挿入されます。</p>
         </div>
       </div>
     </div>
