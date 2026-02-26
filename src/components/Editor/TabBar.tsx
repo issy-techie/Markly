@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, X, Search, Menu, Settings, Info, LogOut, Sun, Moon, Book } from "lucide-react";
+import { Plus, X, Search, Menu, Settings, Info, LogOut, Sun, Moon, Book, ListTree } from "lucide-react";
 import type { Tab } from "../../types";
 import { useI18n } from "../../hooks/useI18n";
 import IconButton from "../ui/IconButton";
@@ -9,11 +9,13 @@ interface TabBarProps {
   activeId: string | null;
   isDark: boolean;
   showReference: boolean;
+  showOutline: boolean;
   showHamburgerMenu: boolean;
   onTabClick: (tabId: string) => void;
   onCloseTab: (tabId: string, e?: React.MouseEvent) => void;
   onCreateNewTab: () => void;
   onToggleReference: () => void;
+  onToggleOutline: () => void;
   onToggleTheme: () => void;
   onToggleHamburgerMenu: () => void;
   onOpenSearchDialog: () => void;
@@ -32,11 +34,13 @@ const TabBar: React.FC<TabBarProps> = ({
   activeId,
   isDark,
   showReference,
+  showOutline,
   showHamburgerMenu,
   onTabClick,
   onCloseTab,
   onCreateNewTab,
   onToggleReference,
+  onToggleOutline,
   onToggleTheme,
   onToggleHamburgerMenu,
   onOpenSearchDialog,
@@ -79,6 +83,7 @@ const TabBar: React.FC<TabBarProps> = ({
       </div>
       <div className="flex items-center h-full bg-slate-100 dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 px-2 flex-shrink-0 gap-1">
         <IconButton onClick={onCreateNewTab} title="New Tab"><Plus size={16} /></IconButton>
+        <IconButton onClick={onToggleOutline} title={t.outline} active={showOutline}><ListTree size={16} /></IconButton>
         <IconButton onClick={onToggleReference} title={t.markdownReference} active={showReference}><Book size={16} /></IconButton>
         <IconButton onClick={onToggleTheme} title={t.toggleTheme}>
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
