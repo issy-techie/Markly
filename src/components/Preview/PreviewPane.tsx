@@ -90,6 +90,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
                         <Plus size={10} className="text-slate-300 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all" />
                       </div>
                       <code className="text-[9px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded truncate w-full">{item.syntax}</code>
+                      {item.sample && <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">{item.sample}</span>}
                     </button>
                   ))}
                 </div>

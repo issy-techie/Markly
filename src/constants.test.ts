@@ -136,21 +136,51 @@ describe("MARKDOWN_REFERENCE", () => {
     }
   });
 
-  it("each item has label, syntax, and snippet", () => {
+  it("each item has label, syntax, snippet, and sample", () => {
     for (const cat of MARKDOWN_REFERENCE) {
       for (const item of cat.items) {
         expect(item.label).toBeTruthy();
         expect(item.syntax).toBeTruthy();
         expect(item.snippet).toBeTruthy();
+        expect(item.sample).toBeTruthy();
       }
     }
   });
 
-  it("includes Mermaid and PlantUML in diagram category", () => {
-    const diagramCat = MARKDOWN_REFERENCE.find(c => c.category === "図解");
-    expect(diagramCat).toBeDefined();
-    const labels = diagramCat!.items.map(i => i.label);
-    expect(labels.some(l => l.includes("Mermaid"))).toBe(true);
-    expect(labels.some(l => l.includes("PlantUML"))).toBe(true);
+  it("has dedicated Mermaid category with multiple diagram types", () => {
+    const mermaidCat = MARKDOWN_REFERENCE.find(c => c.category === "Mermaid");
+    expect(mermaidCat).toBeDefined();
+    expect(mermaidCat!.items.length).toBeGreaterThanOrEqual(5);
+    const labels = mermaidCat!.items.map(i => i.label);
+    expect(labels).toContain("フローチャート");
+    expect(labels).toContain("シーケンス図");
+    expect(labels).toContain("円グラフ");
+  });
+
+  it("has dedicated PlantUML category with multiple diagram types", () => {
+    const pumlCat = MARKDOWN_REFERENCE.find(c => c.category === "PlantUML");
+    expect(pumlCat).toBeDefined();
+    expect(pumlCat!.items.length).toBeGreaterThanOrEqual(4);
+    const labels = pumlCat!.items.map(i => i.label);
+    expect(labels).toContain("シーケンス図");
+    expect(labels).toContain("クラス図");
+  });
+
+  it("has embed category with iframe items", () => {
+    const embedCat = MARKDOWN_REFERENCE.find(c => c.category === "埋め込み");
+    expect(embedCat).toBeDefined();
+    const labels = embedCat!.items.map(i => i.label);
+    expect(labels).toContain("YouTube");
+    expect(labels).toContain("Google Maps");
+    expect(labels).toContain("汎用 iframe");
+  });
+
+  it("all snippets in Mermaid/PlantUML categories contain code fences", () => {
+    const diagramCats = MARKDOWN_REFERENCE.filter(c => c.category === "Mermaid" || c.category === "PlantUML");
+    for (const cat of diagramCats) {
+      for (const item of cat.items) {
+        expect(item.snippet).toContain("```");
+      }
+    }
   });
 });
