@@ -102,7 +102,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
           </div>
         </div>
         <div className="p-3 bg-slate-100/30 dark:bg-slate-900/10 border-t border-slate-200 dark:border-slate-700 shrink-0">
-          <p className="text-[10px] text-slate-400 leading-tight">Click an item to insert its template at the cursor position.</p>
+          <p className="text-[10px] text-slate-400 leading-tight">項目をクリックするとカーソル位置にテンプレートが挿入されます。</p>
         </div>
       </div>
     </div>
