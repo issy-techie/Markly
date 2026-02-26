@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { EditorView } from "@codemirror/view";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { undo, redo } from "@codemirror/commands";
 import mermaid from "mermaid";
 import { listen } from "@tauri-apps/api/event";
@@ -51,6 +51,8 @@ function App() {
 
   // --- Shared refs ---
   const cursorPositionsRef = useRef<Record<string, number>>({});
+  const scrollPositionsRef = useRef<Record<string, number>>({});
+  const pendingRestoreRef = useRef<{ cursor: number; scroll?: number } | null>(null);
   const editorViewRef = useRef<EditorView | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -158,31 +160,57 @@ function App() {
     activeTabId: activeId,
   });
 
-  // Restore cursor position on tab switch
-  useEffect(() => {
+  // Set pending cursor/scroll restore when active tab changes.
+  // useLayoutEffect runs BEFORE regular useEffects (including CM's value sync),
+  // ensuring pendingRestoreRef is set before CM processes the value change.
+  useLayoutEffect(() => {
     const key = activeTab?.path || activeId;
-    if (key && cursorPositionsRef.current[key] !== undefined) {
-      const savedCursor = cursorPositionsRef.current[key];
-      const timer = setTimeout(() => {
-        if (editorViewRef.current) {
-          try {
-            const view = editorViewRef.current;
-            const docLength = view.state.doc.length;
-            const pos = Math.min(savedCursor, docLength);
-            view.dispatch({
-              selection: { anchor: pos, head: pos },
-              effects: EditorView.scrollIntoView(pos, { y: 'start' })
-            });
-            cursorPositionsRef.current[key] = pos;
-            view.focus();
-          } catch(e) {
-            console.warn("Cursor restoration failed:", e);
-          }
-        }
-      }, 50);
-      return () => clearTimeout(timer);
+    if (!key) {
+      pendingRestoreRef.current = null;
+      return;
     }
+    const savedCursor = cursorPositionsRef.current[key];
+    if (savedCursor !== undefined) {
+      pendingRestoreRef.current = {
+        cursor: savedCursor,
+        scroll: scrollPositionsRef.current[key],
+      };
+    } else {
+      pendingRestoreRef.current = null;
+    }
+    // Auto-clear after 500ms to prevent stale restores if no value sync occurs
+    const timer = setTimeout(() => { pendingRestoreRef.current = null; }, 500);
+    return () => clearTimeout(timer);
   }, [activeId, activeTab?.path]);
+
+  // Restore cursor/scroll AFTER CM's value sync completes (via onUpdate callback).
+  // This is more reliable than a timer because it reacts to the actual document change
+  // instead of guessing when CM finishes its internal value prop synchronization.
+  const handleEditorUpdate = useCallback((update: ViewUpdate) => {
+    const pending = pendingRestoreRef.current;
+    if (!pending || !update.docChanged) return;
+    pendingRestoreRef.current = null;
+
+    const { cursor, scroll } = pending;
+    requestAnimationFrame(() => {
+      try {
+        const view = update.view;
+        const pos = Math.min(cursor, view.state.doc.length);
+        if (scroll !== undefined) {
+          view.dispatch({ selection: { anchor: pos, head: pos } });
+          view.scrollDOM.scrollTop = scroll;
+        } else {
+          view.dispatch({
+            selection: { anchor: pos, head: pos },
+            effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+          });
+        }
+        view.focus();
+      } catch {
+        // Editor may have been destroyed
+      }
+    });
+  }, []);
 
   // --- Persistence trigger on state change (must be placed after cursor restoration) ---
   useEffect(() => {
@@ -775,6 +803,11 @@ function App() {
   // --- Save cursor position + switch active tab ---
   const handleTabClick = useCallback((tabId: string) => {
     saveCursorPosition(activeId, tabs, editorViewRef.current, cursorPositionsRef.current);
+    // Save scroll position of the current tab before switching
+    if (activeId && editorViewRef.current) {
+      const key = tabs.find(t => t.id === activeId)?.path || activeId;
+      scrollPositionsRef.current[key] = editorViewRef.current.scrollDOM.scrollTop;
+    }
     setActiveId(tabId);
   }, [activeId, tabs, setActiveId]);
 
@@ -958,9 +991,28 @@ function App() {
               editorFontSize={editorFontSize}
               lineWrapping={lineWrapping}
               editorWidthPercent={editorWidthPercent}
-              onCreateEditor={(view) => { editorViewRef.current = view; }}
+              onCreateEditor={(view) => {
+                editorViewRef.current = view;
+                // Initial cursor restoration (editor first mount, no value sync).
+                // pendingRestoreRef is already set by useLayoutEffect.
+                const pending = pendingRestoreRef.current;
+                if (pending) {
+                  pendingRestoreRef.current = null;
+                  const pos = Math.min(pending.cursor, view.state.doc.length);
+                  setTimeout(() => {
+                    try {
+                      view.dispatch({
+                        selection: { anchor: pos, head: pos },
+                        effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+                      });
+                      view.focus();
+                    } catch { /* editor may not be ready */ }
+                  }, 0);
+                }
+              }}
               onChange={handleEditorChange}
               onPaste={handlePaste}
+              onUpdate={handleEditorUpdate}
             />
             {/* Editor/Preview resize handle */}
             <div

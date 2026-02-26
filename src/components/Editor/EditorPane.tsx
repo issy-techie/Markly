@@ -1,6 +1,6 @@
 import React from "react";
 import CodeMirror from "@uiw/react-codemirror";
-import { EditorView } from "@codemirror/view";
+import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import { githubLight } from "@uiw/codemirror-theme-github";
@@ -16,6 +16,7 @@ interface EditorPaneProps {
   onCreateEditor: (view: EditorView) => void;
   onChange: (value: string) => void;
   onPaste: (event: ClipboardEvent) => void;
+  onUpdate?: (update: ViewUpdate) => void;
 }
 
 const EditorPane: React.FC<EditorPaneProps> = ({
@@ -28,6 +29,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
   onCreateEditor,
   onChange,
   onPaste,
+  onUpdate,
 }) => {
   return (
     <div className="border-r border-slate-200 dark:border-slate-700 h-full flex flex-col" style={{ width: `${editorWidthPercent}%` }}>
@@ -60,6 +62,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         theme={isDark ? oneDark : githubLight}
         onCreateEditor={(view) => onCreateEditor(view)}
         onChange={onChange}
+        onUpdate={onUpdate}
         basicSetup={{ lineNumbers: true, foldGutter: true, searchKeymap: false, highlightSelectionMatches: true }}
       />
     </div>
