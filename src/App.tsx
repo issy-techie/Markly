@@ -55,6 +55,8 @@ function App() {
   const pendingRestoreRef = useRef<{ cursor: number; scroll?: number } | null>(null);
   const editorViewRef = useRef<EditorView | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  // Counter incremented when CM editor is created; forces useScrollSync to re-run
+  const [editorMountCount, setEditorMountCount] = useState(0);
 
   // --- Custom hooks ---
   const { toasts, addToast, removeToast } = useToast();
@@ -158,6 +160,7 @@ function App() {
     previewRef,
     enabled: scrollSync,
     activeTabId: activeId,
+    editorMountCount,
   });
 
   // Set pending cursor/scroll restore when active tab changes.
@@ -993,6 +996,8 @@ function App() {
               editorWidthPercent={editorWidthPercent}
               onCreateEditor={(view) => {
                 editorViewRef.current = view;
+                // Trigger useScrollSync re-run now that editorViewRef.current is set
+                setEditorMountCount(c => c + 1);
                 // Initial cursor restoration (editor first mount, no value sync).
                 // pendingRestoreRef is already set by useLayoutEffect.
                 const pending = pendingRestoreRef.current;

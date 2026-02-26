@@ -7,6 +7,8 @@ interface UseScrollSyncOptions {
   enabled: boolean;
   /** Forces effect re-run on tab switch (scrollDOM is recreated) */
   activeTabId: string | null;
+  /** Forces effect re-run when the CM editor view is first created */
+  editorMountCount?: number;
 }
 
 /**
@@ -22,6 +24,7 @@ export const useScrollSync = ({
   previewRef,
   enabled,
   activeTabId,
+  editorMountCount,
 }: UseScrollSyncOptions) => {
   const isSyncingRef = useRef(false);
   const rafIdRef = useRef<number | null>(null);
@@ -84,5 +87,5 @@ export const useScrollSync = ({
       }
       isSyncingRef.current = false;
     };
-  }, [enabled, activeTabId, editorViewRef, previewRef, getScrollPercent, setScrollPercent]);
+  }, [enabled, activeTabId, editorMountCount, editorViewRef, previewRef, getScrollPercent, setScrollPercent]);
 };
