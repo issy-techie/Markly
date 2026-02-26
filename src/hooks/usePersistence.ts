@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { EditorView } from "@codemirror/view";
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, exists } from "@tauri-apps/plugin-fs";
 import type { Tab, FileEntry, AppConfig, SessionData } from "../types";
 import { getFileName } from "../utils/pathHelpers";
 import { isProjectLocked, acquireLock, releaseLock, startHeartbeat } from "../utils/lockFile";
@@ -243,14 +243,18 @@ export const usePersistence = ({
           const sortedFolders = [...sessionData.expandedFolders].sort(
             (a, b) => a.length - b.length
           );
+          const validFolders: string[] = [];
           for (const folderPath of sortedFolders) {
             try {
+              const folderExists = await exists(folderPath);
+              if (!folderExists) continue;
               await loadChildren(folderPath);
+              validFolders.push(folderPath);
             } catch {
               // Folder may no longer exist; skip
             }
           }
-          setExpandedFolders(new Set(sessionData.expandedFolders));
+          setExpandedFolders(new Set(validFolders));
         }
 
         const restoredTabs: Tab[] = [];

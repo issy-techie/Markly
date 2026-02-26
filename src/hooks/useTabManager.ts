@@ -3,7 +3,7 @@ import type { EditorView } from "@codemirror/view";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { save, ask } from "@tauri-apps/plugin-dialog";
 import type { Tab } from "../types";
-import { IMAGE_EXTENSIONS } from "../constants";
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "../constants";
 import { saveCursorPosition } from "../utils/cursor";
 import { getFileName } from "../utils/pathHelpers";
 
@@ -27,8 +27,8 @@ export const useTabManager = ({
 
   const openTargetFile = async (filePath: string) => {
     const ext = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
-    // Skip image files; don't open in editor
-    if (IMAGE_EXTENSIONS.includes(ext)) return;
+    // Skip image/video files; don't open in editor
+    if (IMAGE_EXTENSIONS.includes(ext) || VIDEO_EXTENSIONS.includes(ext)) return;
 
     const existing = tabs.find((t) => t.path === filePath);
     if (existing) {

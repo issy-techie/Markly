@@ -56,6 +56,17 @@ export const PREVIEW_FONT_OPTIONS = [
 // --- Image extensions ---
 export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
 
+// --- Video extensions ---
+export const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.ogg'];
+
+// --- Video MIME type to extension mapping (for clipboard paste) ---
+export const VIDEO_MIME_MAP: Record<string, string> = {
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
+  'video/quicktime': '.mov',
+  'video/ogg': '.ogg',
+};
+
 // --- Markdown reference data ---
 export const MARKDOWN_REFERENCE = [
   {
@@ -93,6 +104,8 @@ export const MARKDOWN_REFERENCE = [
       { label: "リンク", syntax: "[Title](url)", snippet: "[$1](https://$2)" },
       { label: "区切り線", syntax: "---", snippet: "\n---\n" },
       { label: "テーブル", syntax: "Table", snippet: "| Header | Header |\n| :--- | :--- |\n| Cell | Cell |" },
+      { label: "画像", syntax: "![alt](path)", snippet: "![${1:alt}](./$2)" },
+      { label: "動画", syntax: '<video src="..." controls>', snippet: '<video src="./$1" controls width="100%"></video>' },
     ]
   },
   {

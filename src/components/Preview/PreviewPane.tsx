@@ -3,6 +3,7 @@ import { X, Plus } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import rehypeRaw from "rehype-raw";
 import { MARKDOWN_REFERENCE } from "../../constants";
 import { createMarkdownComponents } from "./MarkdownRenderers";
 
@@ -42,6 +43,7 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({
     <div className={`p-8 overflow-y-auto preview-area custom-scrollbar flex-1 relative ${isDark ? "prose prose-invert bg-slate-900" : "prose bg-slate-50"}`} style={{ fontFamily: previewFontFamily, fontSize: `${previewFontSize}px` }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, ...(lineBreaks ? [remarkBreaks] : [])]}
+        rehypePlugins={[rehypeRaw]}
         components={markdownComponents}
       >
         {content}

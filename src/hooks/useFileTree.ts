@@ -3,7 +3,7 @@ import { readDir } from "@tauri-apps/plugin-fs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { FileEntry } from "../types";
-import { IMAGE_EXTENSIONS } from "../constants";
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from "../constants";
 import { joinPath } from "../utils/pathHelpers";
 
 interface UseFileTreeOptions {
@@ -32,8 +32,8 @@ const loadDirectoryShallow = async (
       };
 
       const ext = item.name.toLowerCase().substring(item.name.lastIndexOf('.'));
-      // Include folders, .md files, and image files in the tree
-      if (item.isDirectory || item.name.endsWith(".md") || IMAGE_EXTENSIONS.includes(ext)) {
+      // Include folders, .md files, image files, and video files in the tree
+      if (item.isDirectory || item.name.endsWith(".md") || IMAGE_EXTENSIONS.includes(ext) || VIDEO_EXTENSIONS.includes(ext)) {
         tree.push(item);
       }
     }

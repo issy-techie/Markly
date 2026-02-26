@@ -46,8 +46,10 @@ const EditorPane: React.FC<EditorPaneProps> = ({
           EditorView.domEventHandlers({
             paste: (event) => {
               const items = event.clipboardData?.items;
-              const hasImage = Array.from(items || []).some(item => item.type.startsWith("image/"));
-              if (hasImage) {
+              const hasMedia = Array.from(items || []).some(
+                item => item.type.startsWith("image/") || item.type.startsWith("video/")
+              );
+              if (hasMedia) {
                 onPaste(event);
                 return true;
               }
