@@ -30,6 +30,8 @@ import ToastContainer from "./components/Toast";
 import Sidebar from "./components/Sidebar/Sidebar";
 import TabBar from "./components/Editor/TabBar";
 import EditorPane from "./components/Editor/EditorPane";
+import StatusBar from "./components/Editor/StatusBar";
+import type { EditorStats } from "./components/Editor/StatusBar";
 import PreviewPane from "./components/Preview/PreviewPane";
 import SearchDialog from "./components/Dialogs/SearchDialog";
 import SettingsDialog from "./components/Dialogs/SettingsDialog";
@@ -59,6 +61,11 @@ function App() {
   const previewRef = useRef<HTMLDivElement>(null);
   // Counter incremented when CM editor is created; forces useScrollSync to re-run
   const [editorMountCount, setEditorMountCount] = useState(0);
+
+  // --- Editor stats for status bar ---
+  const defaultStats: EditorStats = { line: 1, col: 0, charCount: 0, lineCount: 1, wordCount: 0, selectionLength: 0 };
+  const [editorStats, setEditorStats] = useState<EditorStats>(defaultStats);
+  const editorStatsRef = useRef<EditorStats>(defaultStats);
 
   // --- Custom hooks ---
   const { toasts, addToast, removeToast } = useToast();
@@ -201,34 +208,68 @@ function App() {
     return () => clearTimeout(timer);
   }, [activeId, activeTab?.path]);
 
+  // --- Compute editor stats from EditorView state ---
+  const computeEditorStats = useCallback((view: EditorView): EditorStats => {
+    const { state } = view;
+    const { head, anchor } = state.selection.main;
+    const lineObj = state.doc.lineAt(head);
+    const line = lineObj.number;
+    const col = head - lineObj.from;
+    const charCount = state.doc.length;
+    const lineCount = state.doc.lines;
+    const selectionLength = Math.abs(head - anchor);
+    // Word count: only recalculate when needed (caller decides)
+    const text = state.doc.toString();
+    const wordCount = text.trim().length === 0 ? 0 : text.split(/\s+/).filter(Boolean).length;
+    return { line, col, charCount, lineCount, wordCount, selectionLength };
+  }, []);
+
   // Restore cursor/scroll AFTER CM's value sync completes (via onUpdate callback).
   // This is more reliable than a timer because it reacts to the actual document change
   // instead of guessing when CM finishes its internal value prop synchronization.
+  // Also updates the status bar stats on every relevant editor change.
   const handleEditorUpdate = useCallback((update: ViewUpdate) => {
+    // --- Cursor/scroll restoration ---
     const pending = pendingRestoreRef.current;
-    if (!pending || !update.docChanged) return;
-    pendingRestoreRef.current = null;
+    if (pending && update.docChanged) {
+      pendingRestoreRef.current = null;
 
-    const { cursor, scroll } = pending;
-    requestAnimationFrame(() => {
-      try {
-        const view = update.view;
-        const pos = Math.min(cursor, view.state.doc.length);
-        if (scroll !== undefined) {
-          view.dispatch({ selection: { anchor: pos, head: pos } });
-          view.scrollDOM.scrollTop = scroll;
-        } else {
-          view.dispatch({
-            selection: { anchor: pos, head: pos },
-            effects: EditorView.scrollIntoView(pos, { y: 'center' }),
-          });
+      const { cursor, scroll } = pending;
+      requestAnimationFrame(() => {
+        try {
+          const view = update.view;
+          const pos = Math.min(cursor, view.state.doc.length);
+          if (scroll !== undefined) {
+            view.dispatch({ selection: { anchor: pos, head: pos } });
+            view.scrollDOM.scrollTop = scroll;
+          } else {
+            view.dispatch({
+              selection: { anchor: pos, head: pos },
+              effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+            });
+          }
+          view.focus();
+        } catch {
+          // Editor may have been destroyed
         }
-        view.focus();
-      } catch {
-        // Editor may have been destroyed
+      });
+    }
+
+    // --- Status bar stats update ---
+    if (update.docChanged || update.selectionSet) {
+      const stats = computeEditorStats(update.view);
+      // Avoid unnecessary re-renders by comparing with previous value
+      const prev = editorStatsRef.current;
+      if (
+        prev.line !== stats.line || prev.col !== stats.col ||
+        prev.charCount !== stats.charCount || prev.lineCount !== stats.lineCount ||
+        prev.wordCount !== stats.wordCount || prev.selectionLength !== stats.selectionLength
+      ) {
+        editorStatsRef.current = stats;
+        setEditorStats(stats);
       }
-    });
-  }, []);
+    }
+  }, [computeEditorStats]);
 
   // --- Persistence trigger on state change (must be placed after cursor restoration) ---
   useEffect(() => {
@@ -1041,60 +1082,67 @@ function App() {
         />
 
         {activeTab ? (
-          <div id="main-editor-area" className="flex-1 flex overflow-hidden relative">
-            <EditorPane
-              content={activeTab.content || ""}
-              isDark={isDark}
-              editorFontFamily={editorFontFamily}
-              editorFontSize={editorFontSize}
-              lineWrapping={lineWrapping}
-              editorWidthPercent={editorWidthPercent}
-              onCreateEditor={(view) => {
-                editorViewRef.current = view;
-                // Trigger useScrollSync re-run now that editorViewRef.current is set
-                setEditorMountCount(c => c + 1);
-                // Initial cursor restoration (editor first mount, no value sync).
-                // pendingRestoreRef is already set by useLayoutEffect.
-                const pending = pendingRestoreRef.current;
-                if (pending) {
-                  pendingRestoreRef.current = null;
-                  const pos = Math.min(pending.cursor, view.state.doc.length);
-                  setTimeout(() => {
-                    try {
-                      view.dispatch({
-                        selection: { anchor: pos, head: pos },
-                        effects: EditorView.scrollIntoView(pos, { y: 'center' }),
-                      });
-                      view.focus();
-                    } catch { /* editor may not be ready */ }
-                  }, 0);
-                }
-              }}
-              onChange={handleEditorChange}
-              onPaste={handlePaste}
-              onUpdate={handleEditorUpdate}
-            />
-            {/* Editor/Preview resize handle */}
-            <div
-              className="resize-handle-v"
-              onMouseDown={() => handleMouseDown("editor")}
-            />
-            <PreviewPane
-              ref={previewRef}
-              content={activeTab.content}
-              activeFilePath={activeTab.path}
-              isDark={isDark}
-              lineBreaks={lineBreaks}
-              previewFontFamily={previewFontFamily}
-              previewFontSize={previewFontSize}
-              showReference={showReference}
-              refActiveCategory={refActiveCategory}
-              onSetRefActiveCategory={setRefActiveCategory}
-              onCloseReference={() => setShowReference(false)}
-              onInsertSnippet={insertSnippet}
-              markdownReference={markdownRef}
-            />
-          </div>
+          <>
+            <div id="main-editor-area" className="flex-1 flex overflow-hidden relative">
+              <EditorPane
+                content={activeTab.content || ""}
+                isDark={isDark}
+                editorFontFamily={editorFontFamily}
+                editorFontSize={editorFontSize}
+                lineWrapping={lineWrapping}
+                editorWidthPercent={editorWidthPercent}
+                onCreateEditor={(view) => {
+                  editorViewRef.current = view;
+                  // Trigger useScrollSync re-run now that editorViewRef.current is set
+                  setEditorMountCount(c => c + 1);
+                  // Compute initial stats for the status bar
+                  const stats = computeEditorStats(view);
+                  editorStatsRef.current = stats;
+                  setEditorStats(stats);
+                  // Initial cursor restoration (editor first mount, no value sync).
+                  // pendingRestoreRef is already set by useLayoutEffect.
+                  const pending = pendingRestoreRef.current;
+                  if (pending) {
+                    pendingRestoreRef.current = null;
+                    const pos = Math.min(pending.cursor, view.state.doc.length);
+                    setTimeout(() => {
+                      try {
+                        view.dispatch({
+                          selection: { anchor: pos, head: pos },
+                          effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+                        });
+                        view.focus();
+                      } catch { /* editor may not be ready */ }
+                    }, 0);
+                  }
+                }}
+                onChange={handleEditorChange}
+                onPaste={handlePaste}
+                onUpdate={handleEditorUpdate}
+              />
+              {/* Editor/Preview resize handle */}
+              <div
+                className="resize-handle-v"
+                onMouseDown={() => handleMouseDown("editor")}
+              />
+              <PreviewPane
+                ref={previewRef}
+                content={activeTab.content}
+                activeFilePath={activeTab.path}
+                isDark={isDark}
+                lineBreaks={lineBreaks}
+                previewFontFamily={previewFontFamily}
+                previewFontSize={previewFontSize}
+                showReference={showReference}
+                refActiveCategory={refActiveCategory}
+                onSetRefActiveCategory={setRefActiveCategory}
+                onCloseReference={() => setShowReference(false)}
+                onInsertSnippet={insertSnippet}
+                markdownReference={markdownRef}
+              />
+            </div>
+            <StatusBar stats={editorStats} fileName={activeTab.name} />
+          </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
             <div className="text-6xl mb-4 font-bold opacity-10 select-none tracking-tighter italic pointer-events-none">Markly</div>
