@@ -16,6 +16,7 @@ export interface AppConfig {
   openTabsHeight: number;
   lineBreaks: boolean;
   lineWrapping: boolean;
+  scrollSync: boolean;
   editorFontFamily: string;
   editorFontSize: number;
   previewFontFamily: string;

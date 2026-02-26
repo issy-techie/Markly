@@ -100,6 +100,11 @@ describe("migrateLegacyConfig", () => {
     expect(result.sessions).toEqual({});
   });
 
+  it("sets scrollSync to false for migrated configs", () => {
+    const result = migrateLegacyConfig(createLegacyConfig());
+    expect(result.scrollSync).toBe(false);
+  });
+
   it("does not include old flat session fields in result", () => {
     const result = migrateLegacyConfig(createLegacyConfig());
 

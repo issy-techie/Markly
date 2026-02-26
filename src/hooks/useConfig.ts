@@ -17,6 +17,7 @@ export const useConfig = (options?: UseConfigOptions) => {
   const [isDark, setIsDark] = useState(DEFAULT_CONFIG.theme === "dark");
   const [lineBreaks, setLineBreaks] = useState(DEFAULT_CONFIG.lineBreaks);
   const [lineWrapping, setLineWrapping] = useState(DEFAULT_CONFIG.lineWrapping);
+  const [scrollSync, setScrollSync] = useState(DEFAULT_CONFIG.scrollSync);
   const [editorFontFamily, setEditorFontFamily] = useState(DEFAULT_CONFIG.editorFontFamily);
   const [editorFontSize, setEditorFontSize] = useState(DEFAULT_CONFIG.editorFontSize);
   const [previewFontFamily, setPreviewFontFamily] = useState(DEFAULT_CONFIG.previewFontFamily);
@@ -43,6 +44,7 @@ export const useConfig = (options?: UseConfigOptions) => {
         setIsDark(loadedConfig.theme === "dark");
         setLineBreaks(loadedConfig.lineBreaks ?? DEFAULT_CONFIG.lineBreaks);
         setLineWrapping(loadedConfig.lineWrapping ?? DEFAULT_CONFIG.lineWrapping);
+        setScrollSync(loadedConfig.scrollSync ?? DEFAULT_CONFIG.scrollSync);
         if (loadedConfig.editorFontFamily) setEditorFontFamily(loadedConfig.editorFontFamily);
         if (loadedConfig.editorFontSize) setEditorFontSize(loadedConfig.editorFontSize);
         if (loadedConfig.previewFontFamily) setPreviewFontFamily(loadedConfig.previewFontFamily);
@@ -139,6 +141,7 @@ export const useConfig = (options?: UseConfigOptions) => {
     isDark,
     lineBreaks, setLineBreaks,
     lineWrapping, setLineWrapping,
+    scrollSync, setScrollSync,
     editorFontFamily, setEditorFontFamily,
     editorFontSize, setEditorFontSize,
     previewFontFamily, setPreviewFontFamily,

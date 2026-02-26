@@ -50,6 +50,7 @@ export const migrateLegacyConfig = (legacy: LegacyAppConfig): AppConfig => {
     openTabsHeight: legacy.openTabsHeight,
     lineBreaks: legacy.lineBreaks,
     lineWrapping: legacy.lineWrapping,
+    scrollSync: false,
     editorFontFamily: legacy.editorFontFamily,
     editorFontSize: legacy.editorFontSize,
     previewFontFamily: legacy.previewFontFamily,
