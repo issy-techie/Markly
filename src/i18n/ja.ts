@@ -107,6 +107,14 @@ const ja: Translations = {
   bgColor: "背景色",
   insertThisColor: "この色で挿入",
 
+  // --- Status bar ---
+  statusBarLn: "行",
+  statusBarCol: "列",
+  statusBarChars: "文字",
+  statusBarLines: "行数",
+  statusBarWords: "単語",
+  statusBarSelected: "選択",
+
   // --- Language selector (first launch) ---
   selectLanguageTitle: "言語を選択 / Select Language",
   selectLanguageDesc: "Marklyで使用する言語を選択してください。\nこの設定は後から変更できます。",

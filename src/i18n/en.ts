@@ -107,6 +107,14 @@ const en: Translations = {
   bgColor: "Background",
   insertThisColor: "Insert this color",
 
+  // --- Status bar ---
+  statusBarLn: "Ln",
+  statusBarCol: "Col",
+  statusBarChars: "Chars",
+  statusBarLines: "Lines",
+  statusBarWords: "Words",
+  statusBarSelected: "Sel",
+
   // --- Language selector (first launch) ---
   selectLanguageTitle: "Select Language / 言語を選択",
   selectLanguageDesc: "Choose the language for Markly.\nYou can change this later in Settings.",

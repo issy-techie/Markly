@@ -106,6 +106,14 @@ export interface Translations {
   bgColor: string;
   insertThisColor: string;
 
+  // Status bar
+  statusBarLn: string;
+  statusBarCol: string;
+  statusBarChars: string;
+  statusBarLines: string;
+  statusBarWords: string;
+  statusBarSelected: string;
+
   // Language selector
   selectLanguageTitle: string;
   selectLanguageDesc: string;
