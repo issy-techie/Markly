@@ -32,6 +32,8 @@ import TabBar from "./components/Editor/TabBar";
 import EditorPane from "./components/Editor/EditorPane";
 import StatusBar from "./components/Editor/StatusBar";
 import type { EditorStats } from "./components/Editor/StatusBar";
+import OutlinePanel from "./components/Editor/OutlinePanel";
+import { extractHeadings } from "./utils/headingExtractor";
 import PreviewPane from "./components/Preview/PreviewPane";
 import SearchDialog from "./components/Dialogs/SearchDialog";
 import SettingsDialog from "./components/Dialogs/SettingsDialog";
@@ -51,6 +53,7 @@ function App() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showReference, setShowReference] = useState(false);
+  const [showOutline, setShowOutline] = useState(false);
   const [refActiveCategory, setRefActiveCategory] = useState("headings");
 
   // --- Shared refs ---
@@ -222,6 +225,24 @@ function App() {
     const text = state.doc.toString();
     const wordCount = text.trim().length === 0 ? 0 : text.split(/\s+/).filter(Boolean).length;
     return { line, col, charCount, lineCount, wordCount, selectionLength };
+  }, []);
+
+  // --- Outline: extract headings from active tab content ---
+  const headings = useMemo(() => {
+    if (!activeTab?.content) return [];
+    return extractHeadings(activeTab.content);
+  }, [activeTab?.content]);
+
+  // --- Outline: navigate to heading position in editor ---
+  const handleOutlineHeadingClick = useCallback((heading: { from: number }) => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    const pos = Math.min(heading.from, view.state.doc.length);
+    view.dispatch({
+      selection: { anchor: pos, head: pos },
+      effects: EditorView.scrollIntoView(pos, { y: "center" }),
+    });
+    view.focus();
   }, []);
 
   // Restore cursor/scroll AFTER CM's value sync completes (via onUpdate callback).
@@ -1064,11 +1085,13 @@ function App() {
           activeId={activeId}
           isDark={isDark}
           showReference={showReference}
+          showOutline={showOutline}
           showHamburgerMenu={showHamburgerMenu}
           onTabClick={handleTabClick}
           onCloseTab={closeTab}
           onCreateNewTab={createNewTab}
           onToggleReference={() => setShowReference(!showReference)}
+          onToggleOutline={() => setShowOutline(!showOutline)}
           onToggleTheme={toggleTheme}
           onToggleHamburgerMenu={() => setShowHamburgerMenu(prev => !prev)}
           onOpenSearchDialog={() => setShowSearchDialog(true)}
@@ -1084,6 +1107,13 @@ function App() {
         {activeTab ? (
           <>
             <div id="main-editor-area" className="flex-1 flex overflow-hidden relative">
+              {showOutline && (
+                <OutlinePanel
+                  headings={headings}
+                  onHeadingClick={handleOutlineHeadingClick}
+                  onClose={() => setShowOutline(false)}
+                />
+              )}
               <EditorPane
                 content={activeTab.content || ""}
                 isDark={isDark}

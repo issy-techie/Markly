@@ -114,6 +114,10 @@ export interface Translations {
   statusBarWords: string;
   statusBarSelected: string;
 
+  // Outline panel
+  outline: string;
+  outlineEmpty: string;
+
   // Language selector
   selectLanguageTitle: string;
   selectLanguageDesc: string;

@@ -115,6 +115,10 @@ const ja: Translations = {
   statusBarWords: "単語",
   statusBarSelected: "選択",
 
+  // --- Outline panel ---
+  outline: "アウトライン",
+  outlineEmpty: "見出しがありません",
+
   // --- Language selector (first launch) ---
   selectLanguageTitle: "言語を選択 / Select Language",
   selectLanguageDesc: "Marklyで使用する言語を選択してください。\nこの設定は後から変更できます。",
