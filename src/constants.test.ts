@@ -175,6 +175,35 @@ describe("MARKDOWN_REFERENCE", () => {
     expect(labels).toContain("汎用 iframe");
   });
 
+  it("has 文字色 category with preset colors and color picker support", () => {
+    const colorCat = MARKDOWN_REFERENCE.find(c => c.category === "文字色");
+    expect(colorCat).toBeDefined();
+    expect(colorCat!.items.length).toBeGreaterThanOrEqual(6);
+    const labels = colorCat!.items.map(i => i.label);
+    expect(labels).toContain("赤");
+    expect(labels).toContain("青");
+    expect(labels).toContain("緑");
+    expect(labels).toContain("背景色付き");
+    expect(labels).toContain("カスタムカラー");
+  });
+
+  it("文字色 items with preset colors have valid hex color field", () => {
+    const colorCat = MARKDOWN_REFERENCE.find(c => c.category === "文字色")!;
+    const itemsWithColor = colorCat.items.filter((i: any) => i.color);
+    expect(itemsWithColor.length).toBeGreaterThanOrEqual(5);
+    for (const item of itemsWithColor) {
+      expect((item as any).color).toMatch(/^#[0-9a-fA-F]{6}$/);
+    }
+  });
+
+  it("文字色 snippets contain span style tags", () => {
+    const colorCat = MARKDOWN_REFERENCE.find(c => c.category === "文字色")!;
+    for (const item of colorCat.items) {
+      expect(item.snippet).toContain("<span");
+      expect(item.snippet).toContain("style=");
+    }
+  });
+
   it("all snippets in Mermaid/PlantUML categories contain code fences", () => {
     const diagramCats = MARKDOWN_REFERENCE.filter(c => c.category === "Mermaid" || c.category === "PlantUML");
     for (const cat of diagramCats) {
