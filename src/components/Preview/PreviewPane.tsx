@@ -21,7 +21,7 @@ interface PreviewPaneProps {
   onInsertSnippet: (snippet: string) => void;
 }
 
-const PreviewPane: React.FC<PreviewPaneProps> = ({
+const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
   content,
   activeFilePath,
   isDark,
@@ -33,14 +33,14 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({
   onSetRefActiveCategory,
   onCloseReference,
   onInsertSnippet,
-}) => {
+}, ref) => {
   const markdownComponents = useMemo(
     () => createMarkdownComponents({ activeFilePath, isDark }),
     [activeFilePath, isDark]
   );
 
   return (
-    <div className={`p-8 overflow-y-auto preview-area custom-scrollbar flex-1 relative ${isDark ? "prose prose-invert bg-slate-900" : "prose bg-slate-50"}`} style={{ fontFamily: previewFontFamily, fontSize: `${previewFontSize}px` }}>
+    <div ref={ref} className={`p-8 overflow-y-auto preview-area custom-scrollbar flex-1 relative ${isDark ? "prose prose-invert bg-slate-900" : "prose bg-slate-50"}`} style={{ fontFamily: previewFontFamily, fontSize: `${previewFontSize}px` }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, ...(lineBreaks ? [remarkBreaks] : [])]}
         rehypePlugins={[rehypeRaw]}
@@ -103,6 +103,8 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({
       </div>
     </div>
   );
-};
+});
+
+PreviewPane.displayName = "PreviewPane";
 
 export default PreviewPane;

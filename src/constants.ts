@@ -18,6 +18,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   openTabsHeight: 192,
   lineBreaks: false,
   lineWrapping: true,
+  scrollSync: false,
   editorFontFamily: "monospace",
   editorFontSize: 14,
   previewFontFamily: "sans-serif",

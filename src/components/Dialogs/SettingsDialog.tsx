@@ -15,6 +15,8 @@ interface SettingsDialogProps {
   setLineBreaks: (v: boolean) => void;
   lineWrapping: boolean;
   setLineWrapping: (v: boolean) => void;
+  scrollSync: boolean;
+  setScrollSync: (v: boolean) => void;
   editorFontFamily: string;
   setEditorFontFamily: (v: string) => void;
   editorFontSize: number;
@@ -36,6 +38,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
   setLineBreaks,
   lineWrapping,
   setLineWrapping,
+  scrollSync,
+  setScrollSync,
   editorFontFamily,
   setEditorFontFamily,
   editorFontSize,
@@ -124,6 +128,17 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 onChange={(newVal) => {
                   setLineWrapping(newVal);
                   saveConfig({ lineWrapping: newVal });
+                }}
+              />
+            </label>
+
+            <label className="flex items-center justify-between cursor-pointer mt-3">
+              <span className="text-sm text-slate-700 dark:text-slate-300">スクロール同期</span>
+              <ToggleSwitch
+                checked={scrollSync}
+                onChange={(newVal) => {
+                  setScrollSync(newVal);
+                  saveConfig({ scrollSync: newVal });
                 }}
               />
             </label>

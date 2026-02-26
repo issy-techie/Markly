@@ -24,6 +24,7 @@ import { useFileTree } from "./hooks/useFileTree";
 import { useTabManager } from "./hooks/useTabManager";
 import { useTabDragDrop } from "./hooks/useTabDragDrop";
 import { usePersistence } from "./hooks/usePersistence";
+import { useScrollSync } from "./hooks/useScrollSync";
 import { useInputDialog } from "./hooks/useInputDialog";
 import ToastContainer from "./components/Toast";
 import Sidebar from "./components/Sidebar/Sidebar";
@@ -51,6 +52,7 @@ function App() {
   // --- Shared refs ---
   const cursorPositionsRef = useRef<Record<string, number>>({});
   const editorViewRef = useRef<EditorView | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   // --- Custom hooks ---
   const { toasts, addToast, removeToast } = useToast();
@@ -63,6 +65,7 @@ function App() {
     isDark,
     lineBreaks, setLineBreaks,
     lineWrapping, setLineWrapping,
+    scrollSync, setScrollSync,
     editorFontFamily, setEditorFontFamily,
     editorFontSize, setEditorFontSize,
     previewFontFamily, setPreviewFontFamily,
@@ -146,6 +149,14 @@ function App() {
   useEffect(() => {
     if (loadedConfig) applyConfig(loadedConfig);
   }, [loadedConfig, applyConfig]);
+
+  // --- Scroll sync between editor and preview ---
+  useScrollSync({
+    editorViewRef,
+    previewRef,
+    enabled: scrollSync,
+    activeTabId: activeId,
+  });
 
   // Restore cursor position on tab switch
   useEffect(() => {
@@ -957,6 +968,7 @@ function App() {
               onMouseDown={() => handleMouseDown("editor")}
             />
             <PreviewPane
+              ref={previewRef}
               content={activeTab.content}
               activeFilePath={activeTab.path}
               isDark={isDark}
@@ -1022,6 +1034,8 @@ function App() {
           setLineBreaks={setLineBreaks}
           lineWrapping={lineWrapping}
           setLineWrapping={setLineWrapping}
+          scrollSync={scrollSync}
+          setScrollSync={setScrollSync}
           editorFontFamily={editorFontFamily}
           setEditorFontFamily={setEditorFontFamily}
           editorFontSize={editorFontSize}
