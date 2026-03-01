@@ -125,6 +125,7 @@ const en: Translations = {
   tabCloseLeft: "Close to the Left",
   tabCloseRight: "Close to the Right",
   tabCloseAll: "Close All",
+  tabCloseSelected: "Close Selected Tabs",
 
   // --- Language selector (first launch) ---
   selectLanguageTitle: "Select Language / 言語を選択",
