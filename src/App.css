@@ -226,3 +226,26 @@ html, body, #root {
   user-select: none;
   backdrop-filter: blur(4px);
 }
+
+/* テーブル編集ツールバー */
+.table-toolbar {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 4px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.dark .table-toolbar {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
+}

@@ -127,6 +127,21 @@ const ja: Translations = {
   tabCloseAll: "すべて閉じる",
   tabCloseSelected: "選択したタブを閉じる",
 
+  // --- Table editing ---
+  tableInsertRowAbove: "上に行を追加",
+  tableInsertRowBelow: "下に行を追加",
+  tableDeleteRow: "行を削除",
+  tableInsertColumnLeft: "左に列を追加",
+  tableInsertColumnRight: "右に列を追加",
+  tableDeleteColumn: "列を削除",
+  tableAlignLeft: "左揃え",
+  tableAlignCenter: "中央揃え",
+  tableAlignRight: "右揃え",
+  tableFormat: "テーブル整形",
+  tableInsertNew: "テーブルを挿入",
+  tableRows: "行数",
+  tableColumns: "列数",
+
   // --- Zen mode ---
   zenMode: "集中モード",
   zenModeExit: "Escキーまたは F11 で集中モードを終了",

@@ -127,6 +127,21 @@ const en: Translations = {
   tabCloseAll: "Close All",
   tabCloseSelected: "Close Selected Tabs",
 
+  // --- Table editing ---
+  tableInsertRowAbove: "Insert row above",
+  tableInsertRowBelow: "Insert row below",
+  tableDeleteRow: "Delete row",
+  tableInsertColumnLeft: "Insert column left",
+  tableInsertColumnRight: "Insert column right",
+  tableDeleteColumn: "Delete column",
+  tableAlignLeft: "Align left",
+  tableAlignCenter: "Align center",
+  tableAlignRight: "Align right",
+  tableFormat: "Format table",
+  tableInsertNew: "Insert table",
+  tableRows: "Rows",
+  tableColumns: "Columns",
+
   // --- Zen mode ---
   zenMode: "Zen Mode",
   zenModeExit: "Press Esc or F11 to exit Zen Mode",

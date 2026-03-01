@@ -34,6 +34,15 @@ import StatusBar from "./components/Editor/StatusBar";
 import type { EditorStats } from "./components/Editor/StatusBar";
 import OutlinePanel from "./components/Editor/OutlinePanel";
 import { extractHeadings } from "./utils/headingExtractor";
+import { parseTableAtCursor, formatTable } from "./utils/tableParser";
+import type { ParsedTable } from "./utils/tableParser";
+import {
+  insertRowAbove, insertRowBelow, deleteRow,
+  insertColumnLeft, insertColumnRight, deleteColumn,
+  setColumnAlignment, generateNewTable,
+} from "./utils/tableOperations";
+import type { Alignment } from "./utils/tableParser";
+import TableToolbar from "./components/Editor/TableToolbar";
 import PreviewPane from "./components/Preview/PreviewPane";
 import SearchDialog from "./components/Dialogs/SearchDialog";
 import SettingsDialog from "./components/Dialogs/SettingsDialog";
@@ -58,6 +67,15 @@ function App() {
   const [showOutline, setShowOutline] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const [refActiveCategory, setRefActiveCategory] = useState("headings");
+
+  // --- Table editing state ---
+  const [tableContext, setTableContext] = useState<{
+    table: ParsedTable;
+    cursorRowIndex: number;
+    cursorColIndex: number;
+    top: number;
+    left: number;
+  } | null>(null);
 
   // --- Shared refs ---
   const cursorPositionsRef = useRef<Record<string, number>>({});
@@ -305,6 +323,66 @@ function App() {
       ) {
         editorStatsRef.current = stats;
         setEditorStats(stats);
+      }
+    }
+
+    // --- Table toolbar detection ---
+    if (update.docChanged || update.selectionSet) {
+      const view = update.view;
+      const { state } = view;
+      const cursorPos = state.selection.main.head;
+      const docText = state.doc.toString();
+      const lines = docText.split("\n");
+      const cursorLine = state.doc.lineAt(cursorPos).number - 1; // 0-based
+
+      const parsed = parseTableAtCursor(lines, cursorLine);
+      if (parsed) {
+        // Calculate cursor row/col indices within the table
+        const tableLineOffset = cursorLine - parsed.startLine;
+        let cursorRowIndex: number;
+        if (tableLineOffset === 0) {
+          cursorRowIndex = -1; // header row
+        } else if (tableLineOffset === 1) {
+          cursorRowIndex = -1; // separator row → treat as header
+        } else {
+          cursorRowIndex = tableLineOffset - 2; // data row index (0-based)
+        }
+
+        // Determine column index based on cursor position within the line
+        const lineObj = state.doc.lineAt(cursorPos);
+        const lineText = lineObj.text;
+        const offsetInLine = cursorPos - lineObj.from;
+        let colIndex = 0;
+        let pipeCount = 0;
+        for (let i = 0; i < offsetInLine; i++) {
+          if (lineText[i] === "|") {
+            pipeCount++;
+          }
+        }
+        // First pipe is the leading one, so column = pipeCount - 1
+        colIndex = Math.max(0, pipeCount - 1);
+        if (colIndex >= parsed.headers.length) {
+          colIndex = parsed.headers.length - 1;
+        }
+
+        // Position the toolbar above the table's first line
+        const tableFirstLineObj = state.doc.line(parsed.startLine + 1); // 1-based
+        const coords = view.coordsAtPos(tableFirstLineObj.from);
+        if (coords) {
+          // Clamp top so the toolbar doesn't go above the viewport
+          const toolbarTop = Math.max(4, coords.top - 40);
+          setTableContext({
+            table: parsed,
+            cursorRowIndex,
+            cursorColIndex: colIndex,
+            top: toolbarTop,
+            left: coords.left,
+          });
+        } else {
+          setTableContext(null);
+        }
+      } else {
+        setTableContext(null);
       }
     }
   }, [computeEditorStats]);
@@ -852,6 +930,89 @@ function App() {
     return () => { unlisteners.forEach(async (u) => (await u)()); };
   }, [tabs, activeId, projectRoot]);
 
+  // --- Table editing: apply a table mutation to the document ---
+  // Uses the *original* table range from tableContext for replacement,
+  // and the *new* (mutated) table for the formatted content.
+  const applyTableChange = useCallback((newTable: ParsedTable) => {
+    const view = editorViewRef.current;
+    if (!view || !tableContext) return;
+    const { state } = view;
+    const formatted = formatTable(newTable);
+
+    // Use the ORIGINAL table's line range for replacement
+    const origTable = tableContext.table;
+    const startLine = state.doc.line(origTable.startLine + 1); // 0-based → 1-based
+    const endLine = state.doc.line(origTable.endLine);         // endLine is exclusive 0-based, so in 1-based it's the last table line
+    const from = startLine.from;
+    const to = endLine.to;
+
+    // Place cursor at end of newly formatted table
+    const newCursorPos = from + formatted.length;
+
+    view.dispatch({
+      changes: { from, to, insert: formatted },
+      selection: { anchor: Math.min(newCursorPos, from + formatted.length) },
+    });
+    view.focus();
+  }, [tableContext]);
+
+  const handleTableInsertRowAbove = useCallback(() => {
+    if (!tableContext) return;
+    const { table, cursorRowIndex } = tableContext;
+    const rowIdx = cursorRowIndex < 0 ? 0 : cursorRowIndex;
+    applyTableChange(insertRowAbove(table, rowIdx));
+  }, [tableContext, applyTableChange]);
+
+  const handleTableInsertRowBelow = useCallback(() => {
+    if (!tableContext) return;
+    const { table, cursorRowIndex } = tableContext;
+    const rowIdx = cursorRowIndex < 0 ? 0 : cursorRowIndex;
+    applyTableChange(insertRowBelow(table, rowIdx));
+  }, [tableContext, applyTableChange]);
+
+  const handleTableDeleteRow = useCallback(() => {
+    if (!tableContext || tableContext.cursorRowIndex < 0) return;
+    applyTableChange(deleteRow(tableContext.table, tableContext.cursorRowIndex));
+  }, [tableContext, applyTableChange]);
+
+  const handleTableInsertColumnLeft = useCallback(() => {
+    if (!tableContext) return;
+    applyTableChange(insertColumnLeft(tableContext.table, tableContext.cursorColIndex));
+  }, [tableContext, applyTableChange]);
+
+  const handleTableInsertColumnRight = useCallback(() => {
+    if (!tableContext) return;
+    applyTableChange(insertColumnRight(tableContext.table, tableContext.cursorColIndex));
+  }, [tableContext, applyTableChange]);
+
+  const handleTableDeleteColumn = useCallback(() => {
+    if (!tableContext) return;
+    applyTableChange(deleteColumn(tableContext.table, tableContext.cursorColIndex));
+  }, [tableContext, applyTableChange]);
+
+  const handleTableSetAlignment = useCallback((alignment: Alignment) => {
+    if (!tableContext) return;
+    applyTableChange(setColumnAlignment(tableContext.table, tableContext.cursorColIndex, alignment));
+  }, [tableContext, applyTableChange]);
+
+  const handleTableFormat = useCallback(() => {
+    if (!tableContext) return;
+    applyTableChange(tableContext.table); // formatTable is called inside applyTableChange
+  }, [tableContext, applyTableChange]);
+
+  const handleTableInsertNew = useCallback((rows: number, cols: number) => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    const { state } = view;
+    const cursor = state.selection.main.head;
+    const newTableText = "\n" + generateNewTable(rows, cols) + "\n";
+    view.dispatch({
+      changes: { from: cursor, insert: newTableText },
+      selection: { anchor: cursor + newTableText.length },
+    });
+    view.focus();
+  }, []);
+
   // --- Snippet insertion ---
   const insertSnippet = (snippet: string) => {
     if (!editorViewRef.current) return;
@@ -1188,6 +1349,25 @@ function App() {
                   headings={headings}
                   onHeadingClick={handleOutlineHeadingClick}
                   onClose={() => setShowOutline(false)}
+                />
+              )}
+              {/* Table editing toolbar */}
+              {tableContext && (
+                <TableToolbar
+                  table={tableContext.table}
+                  cursorRowIndex={tableContext.cursorRowIndex}
+                  cursorColIndex={tableContext.cursorColIndex}
+                  top={tableContext.top}
+                  left={tableContext.left}
+                  onInsertRowAbove={handleTableInsertRowAbove}
+                  onInsertRowBelow={handleTableInsertRowBelow}
+                  onDeleteRow={handleTableDeleteRow}
+                  onInsertColumnLeft={handleTableInsertColumnLeft}
+                  onInsertColumnRight={handleTableInsertColumnRight}
+                  onDeleteColumn={handleTableDeleteColumn}
+                  onSetAlignment={handleTableSetAlignment}
+                  onFormatTable={handleTableFormat}
+                  onInsertNewTable={handleTableInsertNew}
                 />
               )}
               <EditorPane

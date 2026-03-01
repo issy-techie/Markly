@@ -126,6 +126,21 @@ export interface Translations {
   tabCloseAll: string;
   tabCloseSelected: string;
 
+  // Table editing
+  tableInsertRowAbove: string;
+  tableInsertRowBelow: string;
+  tableDeleteRow: string;
+  tableInsertColumnLeft: string;
+  tableInsertColumnRight: string;
+  tableDeleteColumn: string;
+  tableAlignLeft: string;
+  tableAlignCenter: string;
+  tableAlignRight: string;
+  tableFormat: string;
+  tableInsertNew: string;
+  tableRows: string;
+  tableColumns: string;
+
   // Zen mode
   zenMode: string;
   zenModeExit: string;
