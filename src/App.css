@@ -240,6 +240,41 @@ html, body, #root {
   color: #34d399;
 }
 
+/* スニペット補完ポップアップ */
+.cm-tooltip-autocomplete {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10) !important;
+  overflow: hidden;
+}
+
+.dark .cm-tooltip-autocomplete {
+  border-color: #334155 !important;
+  background: #1e293b !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.cm-tooltip-autocomplete > ul {
+  font-family: inherit !important;
+  font-size: 13px !important;
+}
+
+.cm-tooltip-autocomplete > ul > li {
+  padding: 4px 8px !important;
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.cm-completionIcon-snippet::after {
+  content: "{ }";
+  font-size: 10px;
+  font-family: monospace;
+  opacity: 0.7;
+}
+
 /* テーブル編集ツールバー */
 .table-toolbar {
   position: fixed;

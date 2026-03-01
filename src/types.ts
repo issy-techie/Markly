@@ -1,5 +1,17 @@
 // --- Type definitions ---
 
+/** User-defined snippet for quick insertion in the editor */
+export interface Snippet {
+  /** Unique identifier */
+  id: string;
+  /** Trigger prefix typed in editor (without leading /), e.g. "date", "sig" */
+  prefix: string;
+  /** Display label shown in completion popup */
+  label: string;
+  /** Content to insert. Supports $1 placeholder for cursor positioning, {{DATE}} for current date */
+  content: string;
+}
+
 /** Per-project session data stored under sessions[projectRoot] */
 export interface SessionData {
   openedPaths: string[];
@@ -24,6 +36,8 @@ export interface AppConfig {
   editorFontSize: number;
   previewFontFamily: string;
   previewFontSize: number;
+  // User-defined snippets (global)
+  userSnippets: Snippet[];
   // Multi-project session management
   lastProjectRoot: string | null;
   sessions: Record<string, SessionData>;

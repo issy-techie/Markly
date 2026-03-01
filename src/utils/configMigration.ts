@@ -1,4 +1,5 @@
 import type { AppConfig, SessionData } from "../types";
+import { DEFAULT_SNIPPETS } from "../constants";
 
 /** Old flat config structure (for type checking during migration) */
 interface LegacyAppConfig {
@@ -56,6 +57,7 @@ export const migrateLegacyConfig = (legacy: LegacyAppConfig): AppConfig => {
     editorFontSize: legacy.editorFontSize,
     previewFontFamily: legacy.previewFontFamily,
     previewFontSize: legacy.previewFontSize,
+    userSnippets: DEFAULT_SNIPPETS,
     lastProjectRoot: legacy.projectRoot,
     sessions,
   };

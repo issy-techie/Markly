@@ -1,4 +1,4 @@
-import type { AppConfig, SessionData, Language } from "./types";
+import type { AppConfig, SessionData, Language, Snippet } from "./types";
 
 // --- Reference data types ---
 export interface ReferenceItem {
@@ -24,6 +24,40 @@ export const RESIZE = {
   OPEN_TABS_MAX_HEIGHT: 300,
 } as const;
 
+// --- Default user snippets ---
+export const DEFAULT_SNIPPETS: Snippet[] = [
+  {
+    id: "default-date",
+    prefix: "date",
+    label: "Today's Date",
+    content: "{{DATE}}",
+  },
+  {
+    id: "default-sig",
+    prefix: "sig",
+    label: "Signature",
+    content: "---\n$1\n",
+  },
+  {
+    id: "default-note",
+    prefix: "note",
+    label: "Note Callout",
+    content: "> **Note:** $1\n",
+  },
+  {
+    id: "default-warn",
+    prefix: "warn",
+    label: "Warning Callout",
+    content: "> **Warning:** $1\n",
+  },
+  {
+    id: "default-details",
+    prefix: "details",
+    label: "Collapsible Section",
+    content: "<details>\n<summary>$1</summary>\n\n\n\n</details>\n",
+  },
+];
+
 // --- Default configuration ---
 export const DEFAULT_CONFIG: AppConfig = {
   theme: "dark",
@@ -38,6 +72,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   editorFontSize: 14,
   previewFontFamily: "sans-serif",
   previewFontSize: 16,
+  userSnippets: DEFAULT_SNIPPETS,
   lastProjectRoot: null,
   sessions: {},
 };

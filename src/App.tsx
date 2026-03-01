@@ -10,8 +10,8 @@ import { openPath } from "@tauri-apps/plugin-opener";
 import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, exists, writeFile } from "@tauri-apps/plugin-fs";
 import "./App.css";
 
-import type { FileEntry, Tab, ContextMenuConfig, TabContextMenuConfig, Language } from "./types";
-import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, getMarkdownReference } from "./constants";
+import type { FileEntry, Tab, ContextMenuConfig, TabContextMenuConfig, Language, Snippet } from "./types";
+import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, getMarkdownReference, DEFAULT_SNIPPETS } from "./constants";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { isProjectLocked } from "./utils/lockFile";
 import { saveCursorPosition } from "./utils/cursor";
@@ -50,6 +50,7 @@ import PreviewPane from "./components/Preview/PreviewPane";
 import SearchDialog from "./components/Dialogs/SearchDialog";
 import SettingsDialog from "./components/Dialogs/SettingsDialog";
 import AboutDialog from "./components/Dialogs/AboutDialog";
+import SnippetsDialog from "./components/Dialogs/SnippetsDialog";
 import ContextMenu from "./components/Dialogs/ContextMenu";
 import TabContextMenu from "./components/Dialogs/TabContextMenu";
 import InputDialog from "./components/Dialogs/InputDialog";
@@ -66,6 +67,8 @@ function App() {
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
+  const [showSnippetsDialog, setShowSnippetsDialog] = useState(false);
+  const [userSnippets, setUserSnippets] = useState<Snippet[]>(DEFAULT_SNIPPETS);
   const [showReference, setShowReference] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
   const [showProjectSearch, setShowProjectSearch] = useState(false);
@@ -226,7 +229,12 @@ function App() {
 
   // --- Apply restored config to layout ---
   useEffect(() => {
-    if (loadedConfig) applyConfig(loadedConfig);
+    if (loadedConfig) {
+      applyConfig(loadedConfig);
+      if (loadedConfig.userSnippets) {
+        setUserSnippets(loadedConfig.userSnippets);
+      }
+    }
   }, [loadedConfig, applyConfig]);
 
   // --- Scroll sync between editor and preview ---
@@ -536,6 +544,7 @@ function App() {
       [showSearchDialog, () => setShowSearchDialog(false)],
       [showProjectSearch, () => setShowProjectSearch(false)],
       [showHamburgerMenu, () => setShowHamburgerMenu(false)],
+      [showSnippetsDialog, () => setShowSnippetsDialog(false)],
       [showSettingsDialog, () => setShowSettingsDialog(false)],
       [showAboutDialog, () => setShowAboutDialog(false)],
       [zenMode, () => setZenMode(false)],
@@ -1223,6 +1232,31 @@ function App() {
     }
   }, [activeTab?.path, projectRoot, openTargetFile, addToast, t]);
 
+  // --- Snippet CRUD handlers ---
+  const handleAddSnippet = useCallback((snippet: Snippet) => {
+    setUserSnippets(prev => {
+      const next = [...prev, snippet];
+      saveConfig({ userSnippets: next });
+      return next;
+    });
+  }, [saveConfig]);
+
+  const handleUpdateSnippet = useCallback((updated: Snippet) => {
+    setUserSnippets(prev => {
+      const next = prev.map(s => s.id === updated.id ? updated : s);
+      saveConfig({ userSnippets: next });
+      return next;
+    });
+  }, [saveConfig]);
+
+  const handleDeleteSnippet = useCallback((id: string) => {
+    setUserSnippets(prev => {
+      const next = prev.filter(s => s.id !== id);
+      saveConfig({ userSnippets: next });
+      return next;
+    });
+  }, [saveConfig]);
+
   // --- Open new window ---
   const handleNewWindow = useCallback(() => {
     const label = `markly-${Date.now()}`;
@@ -1429,6 +1463,7 @@ function App() {
             onOpenSearchDialog={() => setShowSearchDialog(true)}
             onOpenProjectSearch={() => setShowProjectSearch(true)}
             onOpenSettingsDialog={() => setShowSettingsDialog(true)}
+            onOpenSnippetsDialog={() => setShowSnippetsDialog(true)}
             onOpenAboutDialog={() => setShowAboutDialog(true)}
             onExportHTML={handleExportHTML}
             onExportPDF={handleExportPDF}
@@ -1483,6 +1518,7 @@ function App() {
                 editorFontSize={editorFontSize}
                 lineWrapping={lineWrapping}
                 editorWidthPercent={editorWidthPercent}
+                snippets={userSnippets}
                 onCreateEditor={(view) => {
                   editorViewRef.current = view;
                   // Trigger useScrollSync re-run now that editorViewRef.current is set
@@ -1636,6 +1672,17 @@ function App() {
       {/* About dialog */}
       {showAboutDialog && (
         <AboutDialog onClose={() => setShowAboutDialog(false)} />
+      )}
+
+      {/* Snippets dialog */}
+      {showSnippetsDialog && (
+        <SnippetsDialog
+          snippets={userSnippets}
+          onAdd={handleAddSnippet}
+          onUpdate={handleUpdateSnippet}
+          onDelete={handleDeleteSnippet}
+          onClose={() => setShowSnippetsDialog(false)}
+        />
       )}
 
       {/* Input dialog (replaces window.prompt) */}

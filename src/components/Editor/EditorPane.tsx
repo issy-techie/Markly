@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
@@ -6,6 +6,8 @@ import { languages } from "@codemirror/language-data";
 import { githubLight } from "@uiw/codemirror-theme-github";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { wikiLinkHighlight } from "../../extensions/wikiLinkHighlight";
+import { createSnippetCompletionExtension } from "../../extensions/snippetCompletion";
+import type { Snippet } from "../../types";
 
 interface EditorPaneProps {
   content: string;
@@ -14,6 +16,7 @@ interface EditorPaneProps {
   editorFontSize: number;
   lineWrapping: boolean;
   editorWidthPercent: number;
+  snippets: Snippet[];
   onCreateEditor: (view: EditorView) => void;
   onChange: (value: string) => void;
   onPaste: (event: ClipboardEvent) => void;
@@ -27,11 +30,17 @@ const EditorPane: React.FC<EditorPaneProps> = ({
   editorFontSize,
   lineWrapping,
   editorWidthPercent,
+  snippets,
   onCreateEditor,
   onChange,
   onPaste,
   onUpdate,
 }) => {
+  const snippetExtension = useMemo(
+    () => createSnippetCompletionExtension(snippets),
+    [snippets]
+  );
+
   return (
     <div data-editor-pane className="border-r border-slate-200 dark:border-slate-700 h-full flex flex-col" style={{ width: `${editorWidthPercent}%` }}>
       <CodeMirror
@@ -41,6 +50,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         extensions={[
           markdown({ base: markdownLanguage, codeLanguages: languages }),
           wikiLinkHighlight,
+          snippetExtension,
           ...(lineWrapping ? [EditorView.lineWrapping] : []),
           EditorView.theme({
             "&": { fontFamily: editorFontFamily, fontSize: `${editorFontSize}px` },
@@ -65,7 +75,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         onCreateEditor={(view) => onCreateEditor(view)}
         onChange={onChange}
         onUpdate={onUpdate}
-        basicSetup={{ lineNumbers: true, foldGutter: true, searchKeymap: false, highlightSelectionMatches: true }}
+        basicSetup={{ lineNumbers: true, foldGutter: true, searchKeymap: false, highlightSelectionMatches: true, autocompletion: false, completionKeymap: false }}
       />
     </div>
   );

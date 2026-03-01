@@ -167,6 +167,21 @@ const ja: Translations = {
   // --- Wiki Link ---
   wikiLinkNotFound: "「{name}」に一致するファイルが見つかりません",
   wikiLinkNoProject: "Wiki Linkを使用するにはプロジェクトフォルダを開いてください",
+
+  // --- Snippets ---
+  snippetsTitle: "スニペット",
+  snippetPrefix: "トリガー接頭辞",
+  snippetLabel: "ラベル",
+  snippetLabelPlaceholder: "表示名（省略可）",
+  snippetContent: "内容",
+  snippetContentPlaceholder: "挿入するスニペットの内容...",
+  snippetPlaceholderHint: "$1 でカーソル位置を指定。{{DATE}} で今日の日付を挿入。",
+  snippetAdd: "スニペットを追加",
+  snippetSave: "保存",
+  snippetEdit: "編集",
+  snippetDuplicatePrefix: "この接頭辞は既に使用されています",
+  snippetsEmpty: "スニペットがありません。追加して始めましょう！",
+  snippetDeleteConfirm: "このスニペットを削除しますか？",
 };
 
 export default ja;
