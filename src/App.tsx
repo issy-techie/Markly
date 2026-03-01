@@ -4,7 +4,7 @@ import { undo, redo } from "@codemirror/commands";
 import mermaid from "mermaid";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { open, ask } from "@tauri-apps/plugin-dialog";
+import { open, ask, save } from "@tauri-apps/plugin-dialog";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, exists, writeFile } from "@tauri-apps/plugin-fs";
 import "./App.css";
@@ -15,6 +15,7 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { isProjectLocked } from "./utils/lockFile";
 import { saveCursorPosition } from "./utils/cursor";
 import { confirmAndExit } from "./utils/appLifecycle";
+import { generateExportHTML } from "./utils/exportUtils";
 import { getFileName, getDirName, getExtension, joinPath, normalizePath } from "./utils/pathHelpers";
 import { useConfig } from "./hooks/useConfig";
 import { useSearch } from "./hooks/useSearch";
@@ -1135,6 +1136,33 @@ function App() {
     });
   }, [flushAppState, tabsRef, t]);
 
+  // --- Export: HTML ---
+  const handleExportHTML = useCallback(async () => {
+    const previewArea = previewRef.current;
+    if (!previewArea || !activeTab) return;
+
+    const title = activeTab.name.replace(/\.md$/, "");
+    const html = generateExportHTML(previewArea.innerHTML, title, activeTab.path || "");
+
+    try {
+      const filePath = await save({
+        defaultPath: `${title}.html`,
+        filters: [{ name: "HTML", extensions: ["html"] }],
+      });
+      if (!filePath) return;
+      await writeTextFile(filePath, html);
+      addToast(t.exportedSuccessfully, "success");
+    } catch (e) {
+      console.error("HTML export failed:", e);
+      addToast(t.failedExport, "error");
+    }
+  }, [activeTab, addToast, t]);
+
+  // --- Export: PDF (via window.print) ---
+  const handleExportPDF = useCallback(() => {
+    window.print();
+  }, []);
+
   // --- Open new window ---
   const handleNewWindow = useCallback(() => {
     const label = `markly-${Date.now()}`;
@@ -1327,6 +1355,9 @@ function App() {
             onOpenSearchDialog={() => setShowSearchDialog(true)}
             onOpenSettingsDialog={() => setShowSettingsDialog(true)}
             onOpenAboutDialog={() => setShowAboutDialog(true)}
+            onExportHTML={handleExportHTML}
+            onExportPDF={handleExportPDF}
+            hasActiveTab={!!activeTab}
             onExit={handleExit}
             zenMode={zenMode}
             onToggleZenMode={() => setZenMode(prev => !prev)}

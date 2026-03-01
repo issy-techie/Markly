@@ -32,7 +32,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
   onUpdate,
 }) => {
   return (
-    <div className="border-r border-slate-200 dark:border-slate-700 h-full flex flex-col" style={{ width: `${editorWidthPercent}%` }}>
+    <div data-editor-pane className="border-r border-slate-200 dark:border-slate-700 h-full flex flex-col" style={{ width: `${editorWidthPercent}%` }}>
       <CodeMirror
         className="flex-1 overflow-hidden"
         value={content}

@@ -142,6 +142,12 @@ const ja: Translations = {
   tableRows: "行数",
   tableColumns: "列数",
 
+  // --- Export ---
+  exportAsHTML: "HTMLとしてエクスポート",
+  exportAsPDF: "PDFとしてエクスポート",
+  exportedSuccessfully: "エクスポートしました",
+  failedExport: "エクスポートに失敗しました",
+
   // --- Zen mode ---
   zenMode: "集中モード",
   zenModeExit: "Escキーまたは F11 で集中モードを終了",

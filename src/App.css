@@ -249,3 +249,143 @@ html, body, #root {
   border-color: #334155;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
 }
+
+/* ─── PDF エクスポート用 印刷スタイル ─── */
+@media print {
+  /* レイアウトの制約を解除 */
+  html, body, #root {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    color: #1f2328 !important;
+  }
+
+  /* UI要素をすべて非表示 */
+  aside,
+  [data-tab-bar],
+  [data-editor-pane],
+  [data-status-bar],
+  [data-outline-panel],
+  [data-reference-panel],
+  .resize-handle-v,
+  .resize-handle-h,
+  .table-toolbar,
+  .zen-mode-hint {
+    display: none !important;
+  }
+
+  /* メインエリアをブロック表示に変更（flexを解除） */
+  #main-editor-area {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* ルートフレックスコンテナの制約を解除 */
+  #root > div {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* メインカラムの制約を解除 */
+  #main-editor-area + div,
+  #main-editor-area ~ div {
+    display: block !important;
+  }
+
+  /* プレビューペインのラッパー（flex-1 relative overflow-hidden flex） */
+  .preview-area {
+    width: 100% !important;
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    font-size: 14px !important;
+    /* ダークモードの prose-invert を打ち消し、印刷用に黒文字化 */
+    color: #1f2328 !important;
+    background: white !important;
+    --tw-prose-body: #1f2328 !important;
+    --tw-prose-headings: #1f2328 !important;
+    --tw-prose-links: #0969da !important;
+    --tw-prose-bold: #1f2328 !important;
+    --tw-prose-counters: #57606a !important;
+    --tw-prose-bullets: #57606a !important;
+    --tw-prose-quotes: #57606a !important;
+    --tw-prose-code: #1f2328 !important;
+    --tw-prose-hr: #d1d9e0 !important;
+    --tw-prose-th-borders: #d1d9e0 !important;
+    --tw-prose-td-borders: #d1d9e0 !important;
+  }
+
+  /* prose-invert の子要素も含め文字色を強制上書き */
+  .preview-area *:not(code):not(pre):not(a) {
+    color: inherit !important;
+  }
+  .preview-area a {
+    color: #0969da !important;
+  }
+
+  /* プレビューペインの親要素 */
+  .preview-area-wrapper,
+  .preview-area + div {
+    overflow: visible !important;
+  }
+
+  /* プレビュー内の画像 */
+  .preview-area img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* プレビュー内のコードブロック */
+  .preview-area pre {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    page-break-inside: avoid;
+    background-color: #f6f8fa !important;
+    color: #1f2328 !important;
+  }
+  .preview-area pre code {
+    color: #1f2328 !important;
+    background-color: transparent !important;
+  }
+  .preview-area code {
+    background-color: #eff1f3 !important;
+    color: #1f2328 !important;
+  }
+
+  /* テーブルの印刷スタイル */
+  .preview-area table {
+    page-break-inside: avoid;
+  }
+  .preview-area th {
+    background-color: #f6f8fa !important;
+    border-color: #d1d9e0 !important;
+    color: #1f2328 !important;
+  }
+  .preview-area td {
+    border-color: #d1d9e0 !important;
+    color: #1f2328 !important;
+  }
+
+  /* blockquote */
+  .preview-area blockquote {
+    color: #636c76 !important;
+    border-left-color: #d1d9e0 !important;
+  }
+
+  /* 見出しの改ページ制御 */
+  .preview-area h1,
+  .preview-area h2,
+  .preview-area h3,
+  .preview-area h4 {
+    page-break-after: avoid;
+    color: #1f2328 !important;
+  }
+  .preview-area h1,
+  .preview-area h2 {
+    border-color: #d1d9e0 !important;
+  }
+}

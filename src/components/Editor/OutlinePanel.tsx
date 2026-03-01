@@ -17,7 +17,7 @@ const OutlinePanel: React.FC<OutlinePanelProps> = ({
   const t = useI18n();
 
   return (
-    <div className="w-48 flex-shrink-0 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col select-none h-full">
+    <div data-outline-panel className="w-48 flex-shrink-0 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col select-none h-full">
       {/* Header */}
       <div className="p-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
         {t.outline}
