@@ -56,6 +56,7 @@ function App() {
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showReference, setShowReference] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
   const [refActiveCategory, setRefActiveCategory] = useState("headings");
 
   // --- Shared refs ---
@@ -442,10 +443,18 @@ function App() {
       [showHamburgerMenu, () => setShowHamburgerMenu(false)],
       [showSettingsDialog, () => setShowSettingsDialog(false)],
       [showAboutDialog, () => setShowAboutDialog(false)],
+      [zenMode, () => setZenMode(false)],
       [selectedTabIds.size > 0, () => clearSelection()],
     ];
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // F11: toggle zen mode
+      if (e.key === "F11") {
+        e.preventDefault();
+        setZenMode(prev => !prev);
+        return;
+      }
+
       if (e.key === "Escape") {
         for (const [isOpen, close] of escapeTargets) {
           if (isOpen) { close(); break; }
@@ -467,7 +476,7 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tabs, activeId, reorderTabs, tabContextMenu, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog, selectedTabIds.size, clearSelection]);
+  }, [tabs, activeId, reorderTabs, tabContextMenu, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog, zenMode, selectedTabIds.size, clearSelection]);
 
   // --- Close hamburger menu on outside click ---
   useEffect(() => {
@@ -1098,75 +1107,83 @@ function App() {
     <div className={`flex h-screen w-screen bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 overflow-hidden font-sans relative ${isResizing ? "select-none" : ""}`}>
 
       {/* 1. Sidebar */}
-      <Sidebar
-        sidebarRef={sidebarRef}
-        sidebarWidth={sidebarWidth}
-        fileTree={fileTree}
-        projectRoot={projectRoot}
-        expandedFolders={expandedFolders}
-        loadingFolders={loadingFolders}
-        activeFilePath={activeTab?.path}
-        isRefreshing={isRefreshing}
-        openTabsHeight={openTabsHeight}
-        tabs={tabs}
-        activeId={activeId}
-        onToggleFolder={handleToggleFolder}
-        onOpenFile={openTargetFile}
-        onContextMenu={handleContextMenu}
-        onCreateFile={createFileInFolder}
-        onCreateFolder={createFolderInFolder}
-        onRename={renameFile}
-        onDelete={deleteFile}
-        onRefreshTree={refreshTree}
-        onOpenFolder={handleOpenFolder}
-        onNewWindow={handleNewWindow}
-        onTabClick={handleTabClick}
-        onResizeMouseDown={handleMouseDown}
-      />
+      {!zenMode && (
+        <>
+          <Sidebar
+            sidebarRef={sidebarRef}
+            sidebarWidth={sidebarWidth}
+            fileTree={fileTree}
+            projectRoot={projectRoot}
+            expandedFolders={expandedFolders}
+            loadingFolders={loadingFolders}
+            activeFilePath={activeTab?.path}
+            isRefreshing={isRefreshing}
+            openTabsHeight={openTabsHeight}
+            tabs={tabs}
+            activeId={activeId}
+            onToggleFolder={handleToggleFolder}
+            onOpenFile={openTargetFile}
+            onContextMenu={handleContextMenu}
+            onCreateFile={createFileInFolder}
+            onCreateFolder={createFolderInFolder}
+            onRename={renameFile}
+            onDelete={deleteFile}
+            onRefreshTree={refreshTree}
+            onOpenFolder={handleOpenFolder}
+            onNewWindow={handleNewWindow}
+            onTabClick={handleTabClick}
+            onResizeMouseDown={handleMouseDown}
+          />
 
-      {/* Sidebar resize handle */}
-      <div
-        className="resize-handle-v"
-        onMouseDown={() => handleMouseDown("sidebar")}
-      />
+          {/* Sidebar resize handle */}
+          <div
+            className="resize-handle-v"
+            onMouseDown={() => handleMouseDown("sidebar")}
+          />
+        </>
+      )}
 
       {/* 2. Main area */}
       <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 overflow-hidden">
         {/* Tab bar */}
-        <TabBar
-          tabs={tabs}
-          activeId={activeId}
-          selectedTabIds={selectedTabIds}
-          isDark={isDark}
-          showReference={showReference}
-          showOutline={showOutline}
-          showHamburgerMenu={showHamburgerMenu}
-          onTabClick={handleTabClick}
-          onCloseTab={closeTab}
-          onTabContextMenu={handleTabContextMenu}
-          onCreateNewTab={createNewTab}
-          onToggleReference={() => setShowReference(!showReference)}
-          onToggleOutline={() => setShowOutline(!showOutline)}
-          onToggleTheme={toggleTheme}
-          onToggleHamburgerMenu={() => setShowHamburgerMenu(prev => !prev)}
-          onOpenSearchDialog={() => setShowSearchDialog(true)}
-          onOpenSettingsDialog={() => setShowSettingsDialog(true)}
-          onOpenAboutDialog={() => setShowAboutDialog(true)}
-          onExit={handleExit}
-          draggedIndex={draggedIndex}
-          draggedIds={draggedIds}
-          dropTargetIndex={dropTargetIndex}
-          dropPosition={dropPosition}
-          dragClientX={dragClientX}
-          dragClientY={dragClientY}
-          draggedTotalWidth={draggedTotalWidth}
-          onTabMouseDown={handleTabMouseDown}
-        />
+        {!zenMode && (
+          <TabBar
+            tabs={tabs}
+            activeId={activeId}
+            selectedTabIds={selectedTabIds}
+            isDark={isDark}
+            showReference={showReference}
+            showOutline={showOutline}
+            showHamburgerMenu={showHamburgerMenu}
+            onTabClick={handleTabClick}
+            onCloseTab={closeTab}
+            onTabContextMenu={handleTabContextMenu}
+            onCreateNewTab={createNewTab}
+            onToggleReference={() => setShowReference(!showReference)}
+            onToggleOutline={() => setShowOutline(!showOutline)}
+            onToggleTheme={toggleTheme}
+            onToggleHamburgerMenu={() => setShowHamburgerMenu(prev => !prev)}
+            onOpenSearchDialog={() => setShowSearchDialog(true)}
+            onOpenSettingsDialog={() => setShowSettingsDialog(true)}
+            onOpenAboutDialog={() => setShowAboutDialog(true)}
+            onExit={handleExit}
+            zenMode={zenMode}
+            onToggleZenMode={() => setZenMode(prev => !prev)}
+            draggedIndex={draggedIndex}
+            draggedIds={draggedIds}
+            dropTargetIndex={dropTargetIndex}
+            dropPosition={dropPosition}
+            dragClientX={dragClientX}
+            dragClientY={dragClientY}
+            draggedTotalWidth={draggedTotalWidth}
+            onTabMouseDown={handleTabMouseDown}
+          />
+        )}
 
         {activeTab ? (
           <>
             <div id="main-editor-area" className="flex-1 flex overflow-hidden relative">
-              {showOutline && (
+              {showOutline && !zenMode && (
                 <OutlinePanel
                   headings={headings}
                   onHeadingClick={handleOutlineHeadingClick}
@@ -1222,7 +1239,7 @@ function App() {
                 lineBreaks={lineBreaks}
                 previewFontFamily={previewFontFamily}
                 previewFontSize={previewFontSize}
-                showReference={showReference}
+                showReference={showReference && !zenMode}
                 refActiveCategory={refActiveCategory}
                 onSetRefActiveCategory={setRefActiveCategory}
                 onCloseReference={() => setShowReference(false)}
@@ -1230,7 +1247,7 @@ function App() {
                 markdownReference={markdownRef}
               />
             </div>
-            <StatusBar stats={editorStats} fileName={activeTab.name} />
+            {!zenMode && <StatusBar stats={editorStats} fileName={activeTab.name} />}
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
@@ -1239,6 +1256,13 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Zen mode exit hint overlay */}
+      {zenMode && (
+        <div className="zen-mode-hint" onClick={() => setZenMode(false)}>
+          {t.zenModeExit}
+        </div>
+      )}
 
       {/* Context menu */}
       {contextMenu && (

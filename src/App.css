@@ -199,3 +199,30 @@ html, body, #root {
 .cm-foldGutter {
   width: 16px !important;
 }
+
+/* Zenモード（集中モード）ヒント表示 */
+@keyframes zen-hint-fade {
+  0% { opacity: 0; transform: translate(-50%, 10px); }
+  15% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+.zen-mode-hint {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #e2e8f0;
+  font-size: 13px;
+  z-index: 9999;
+  pointer-events: auto;
+  cursor: pointer;
+  animation: zen-hint-fade 3s ease-in-out forwards;
+  white-space: nowrap;
+  user-select: none;
+  backdrop-filter: blur(4px);
+}

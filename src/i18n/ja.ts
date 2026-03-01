@@ -127,6 +127,10 @@ const ja: Translations = {
   tabCloseAll: "すべて閉じる",
   tabCloseSelected: "選択したタブを閉じる",
 
+  // --- Zen mode ---
+  zenMode: "集中モード",
+  zenModeExit: "Escキーまたは F11 で集中モードを終了",
+
   // --- Language selector (first launch) ---
   selectLanguageTitle: "言語を選択 / Select Language",
   selectLanguageDesc: "Marklyで使用する言語を選択してください。\nこの設定は後から変更できます。",
