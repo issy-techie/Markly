@@ -166,4 +166,19 @@ export interface Translations {
   // Wiki Link
   wikiLinkNotFound: string;
   wikiLinkNoProject: string;
+
+  // Snippets
+  snippetsTitle: string;
+  snippetPrefix: string;
+  snippetLabel: string;
+  snippetLabelPlaceholder: string;
+  snippetContent: string;
+  snippetContentPlaceholder: string;
+  snippetPlaceholderHint: string;
+  snippetAdd: string;
+  snippetSave: string;
+  snippetEdit: string;
+  snippetDuplicatePrefix: string;
+  snippetsEmpty: string;
+  snippetDeleteConfirm: string;
 }

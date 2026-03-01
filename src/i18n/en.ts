@@ -167,6 +167,21 @@ const en: Translations = {
   // --- Wiki Link ---
   wikiLinkNotFound: "No file found matching \"{name}\"",
   wikiLinkNoProject: "Open a project folder to use Wiki Links",
+
+  // --- Snippets ---
+  snippetsTitle: "Snippets",
+  snippetPrefix: "Trigger prefix",
+  snippetLabel: "Label",
+  snippetLabelPlaceholder: "Display name (optional)",
+  snippetContent: "Content",
+  snippetContentPlaceholder: "Snippet content to insert...",
+  snippetPlaceholderHint: "Use $1 to mark cursor position. Use {{DATE}} for today's date.",
+  snippetAdd: "Add Snippet",
+  snippetSave: "Save",
+  snippetEdit: "Edit",
+  snippetDuplicatePrefix: "This prefix is already in use",
+  snippetsEmpty: "No snippets yet. Add one to get started!",
+  snippetDeleteConfirm: "Delete this snippet?",
 };
 
 export default en;

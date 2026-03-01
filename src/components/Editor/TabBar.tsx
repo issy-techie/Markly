@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, X, Search, FolderSearch, Menu, Settings, Info, LogOut, Sun, Moon, Book, ListTree, Maximize, Minimize, FileText, FileDown } from "lucide-react";
+import { Plus, X, Search, FolderSearch, Menu, Settings, Info, LogOut, Sun, Moon, Book, ListTree, Maximize, Minimize, FileText, FileDown, Braces } from "lucide-react";
 import type { Tab } from "../../types";
 import { useI18n } from "../../hooks/useI18n";
 import IconButton from "../ui/IconButton";
@@ -22,6 +22,7 @@ interface TabBarProps {
   onOpenSearchDialog: () => void;
   onOpenProjectSearch: () => void;
   onOpenSettingsDialog: () => void;
+  onOpenSnippetsDialog: () => void;
   onOpenAboutDialog: () => void;
   onExit: () => void;
   // Export
@@ -62,6 +63,7 @@ const TabBar: React.FC<TabBarProps> = ({
   onOpenSearchDialog,
   onOpenProjectSearch,
   onOpenSettingsDialog,
+  onOpenSnippetsDialog,
   onOpenAboutDialog,
   onExit,
   onExportHTML,
@@ -211,6 +213,12 @@ const TabBar: React.FC<TabBarProps> = ({
                 <FileDown size={14} className="shrink-0" /> {t.exportAsPDF}
               </button>
               <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
+              <button
+                onClick={onOpenSnippetsDialog}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
+              >
+                <Braces size={14} className="shrink-0" /> {t.snippetsTitle}
+              </button>
               <button
                 onClick={onOpenSettingsDialog}
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
