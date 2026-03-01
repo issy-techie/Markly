@@ -27,8 +27,12 @@ interface TabBarProps {
   onTabContextMenu: (e: React.MouseEvent, tabId: string) => void;
   // Tab drag-and-drop reorder
   draggedIndex: number | null;
+  draggedIds: string[];
   dropTargetIndex: number | null;
   dropPosition: "before" | "after" | null;
+  dragClientX: number;
+  dragClientY: number;
+  draggedTotalWidth: number;
   onTabMouseDown: (e: React.MouseEvent, index: number) => void;
 }
 
@@ -53,17 +57,60 @@ const TabBar: React.FC<TabBarProps> = ({
   onExit,
   onTabContextMenu,
   draggedIndex,
+  draggedIds,
   dropTargetIndex,
   dropPosition,
+  dragClientX,
+  dragClientY,
+  draggedTotalWidth,
   onTabMouseDown,
 }) => {
   const t = useI18n();
+  const isDragging = draggedIndex !== null;
+  const draggedTab = isDragging ? tabs[draggedIndex] : null;
+  const draggedIdSet = new Set(draggedIds);
+  const isMultiDrag = draggedIds.length > 1;
+
   return (
-    <div className="h-8 flex items-end bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-1 gap-0.5">
+    <div className="h-8 flex items-end bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-1 gap-0.5" data-tab-bar>
       <div className="flex-1 flex h-full overflow-x-auto tab-scrollbar items-end">
         {tabs.map((tab, index) => {
           const isSelected = selectedTabIds.has(tab.id);
           const isActive = activeId === tab.id;
+          const isBeingDragged = draggedIdSet.has(tab.id);
+
+          // Compute slide offset for non-dragged tabs during drag
+          let slideTransform = "";
+          if (isDragging && !isBeingDragged && dropTargetIndex !== null && dropPosition !== null) {
+            // Determine the effective insert position
+            const insertIdx = dropPosition === "before" ? dropTargetIndex : dropTargetIndex + 1;
+
+            // Count how many dragged tabs are before/after this tab
+            const draggedBefore = draggedIds.filter((id) => {
+              const di = tabs.findIndex(t => t.id === id);
+              return di < index;
+            }).length;
+            const draggedAfter = draggedIds.filter((id) => {
+              const di = tabs.findIndex(t => t.id === id);
+              return di > index;
+            }).length;
+
+            // This tab's "logical" position if dragged tabs were removed
+            const logicalIndex = index - draggedBefore;
+            // Insert position in the "remaining" array
+            const remainingInsertIdx = insertIdx - draggedIds.filter((id) => {
+              const di = tabs.findIndex(t => t.id === id);
+              return di < insertIdx;
+            }).length;
+
+            if (logicalIndex >= remainingInsertIdx) {
+              // This tab is at or after insert point → shift right
+              slideTransform = `translateX(${draggedTotalWidth}px)`;
+            }
+            // tabs before insert point stay in place (no transform needed)
+            void draggedAfter; // suppress unused warning
+          }
+
           return (
           <div
             key={tab.id}
@@ -74,16 +121,18 @@ const TabBar: React.FC<TabBarProps> = ({
             className={`
               flex items-center gap-2 px-3 py-1.5 text-xs rounded-t-lg
               cursor-pointer group flex-shrink-0 min-w-[80px] max-w-[200px]
-              ${draggedIndex === null ? "transition-all duration-150" : ""}
+              ${isDragging && !isBeingDragged ? "tab-slide-transition" : ""}
+              ${!isDragging ? "transition-all duration-150" : ""}
               ${isActive
                 ? "bg-white dark:bg-slate-900 shadow-sm font-medium -mb-px border-t border-l border-r border-slate-200 dark:border-slate-700"
                 : "bg-slate-200/50 dark:bg-slate-800/50 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 mt-1"
               }
-              ${isSelected ? "ring-2 ring-blue-400 ring-inset" : ""}
-              ${draggedIndex === index ? "opacity-40" : ""}
+              ${isSelected && !isBeingDragged ? "ring-2 ring-blue-400 ring-inset" : ""}
+              ${isBeingDragged ? "opacity-30 scale-95" : ""}
               ${dropTargetIndex === index && dropPosition === "before" ? "tab-drop-before" : ""}
               ${dropTargetIndex === index && dropPosition === "after" ? "tab-drop-after" : ""}
             `}
+            style={slideTransform ? { transform: slideTransform } : undefined}
           >
             <span className="truncate flex-1 select-none">{tab.name}</span>
             {tab.isModified && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>}
@@ -144,6 +193,31 @@ const TabBar: React.FC<TabBarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Drag ghost: floating copy of the dragged tab(s) */}
+      {isDragging && draggedTab && dragClientX > 0 && (
+        <div
+          className={`tab-drag-ghost flex items-center gap-2 px-3 py-1.5 text-xs
+            ${activeId === draggedTab.id
+              ? "bg-white dark:bg-slate-900 font-medium border-t border-l border-r border-slate-200 dark:border-slate-700"
+              : "bg-slate-200 dark:bg-slate-800 text-slate-500"
+            }`}
+          style={{
+            left: dragClientX - 60,
+            top: dragClientY - 14,
+            width: isMultiDrag ? 140 : undefined,
+            maxWidth: 200,
+            minWidth: 80,
+          }}
+        >
+          <span className="truncate flex-1 select-none">{draggedTab.name}</span>
+          {isMultiDrag && (
+            <span className="flex-shrink-0 bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {draggedIds.length}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };
