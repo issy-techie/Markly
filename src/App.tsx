@@ -144,6 +144,7 @@ function App() {
     closeSelectedTabs,
     saveFile,
     reorderTabs,
+    reorderMultipleTabs,
     toggleSelectTab,
     rangeSelectTabs,
     clearSelection,
@@ -151,10 +152,14 @@ function App() {
 
   const {
     draggedIndex,
+    draggedIds,
     dropTargetIndex,
     dropPosition,
+    dragClientX,
+    dragClientY,
+    draggedTotalWidth,
     handleTabMouseDown,
-  } = useTabDragDrop({ tabs, reorderTabs });
+  } = useTabDragDrop({ tabs, selectedTabIds, reorderTabs, reorderMultipleTabs });
 
   const {
     showSearchDialog, setShowSearchDialog,
@@ -437,6 +442,7 @@ function App() {
       [showHamburgerMenu, () => setShowHamburgerMenu(false)],
       [showSettingsDialog, () => setShowSettingsDialog(false)],
       [showAboutDialog, () => setShowAboutDialog(false)],
+      [selectedTabIds.size > 0, () => clearSelection()],
     ];
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -461,7 +467,7 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tabs, activeId, reorderTabs, tabContextMenu, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog]);
+  }, [tabs, activeId, reorderTabs, tabContextMenu, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog, selectedTabIds.size, clearSelection]);
 
   // --- Close hamburger menu on outside click ---
   useEffect(() => {
@@ -475,6 +481,19 @@ function App() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showHamburgerMenu]);
+
+  // --- Clear tab selection on click outside tab bar ---
+  useEffect(() => {
+    if (selectedTabIds.size === 0) return;
+    const handleClickOutsideTabs = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-tab-bar]')) {
+        clearSelection();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideTabs);
+    return () => document.removeEventListener('mousedown', handleClickOutsideTabs);
+  }, [selectedTabIds.size, clearSelection]);
 
   useEffect(() => { mermaid.contentLoaded(); }, [activeTab?.content]);
 
@@ -1135,8 +1154,12 @@ function App() {
           onOpenAboutDialog={() => setShowAboutDialog(true)}
           onExit={handleExit}
           draggedIndex={draggedIndex}
+          draggedIds={draggedIds}
           dropTargetIndex={dropTargetIndex}
           dropPosition={dropPosition}
+          dragClientX={dragClientX}
+          dragClientY={dragClientY}
+          draggedTotalWidth={draggedTotalWidth}
           onTabMouseDown={handleTabMouseDown}
         />
 

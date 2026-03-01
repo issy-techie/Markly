@@ -219,6 +219,28 @@ export const useTabManager = ({
     });
   }, []);
 
+  /** Move multiple tabs (preserving their relative order) to a position relative to a target tab */
+  const reorderMultipleTabs = useCallback((draggedIds: string[], dropTargetId: string, position: "before" | "after") => {
+    setTabs(prev => {
+      const draggedSet = new Set(draggedIds);
+      // Extract dragged tabs in their current order
+      const dragged = prev.filter(t => draggedSet.has(t.id));
+      const remaining = prev.filter(t => !draggedSet.has(t.id));
+
+      // Find insertion point in the remaining array
+      const targetIdx = remaining.findIndex(t => t.id === dropTargetId);
+      if (targetIdx < 0) return prev;
+
+      const insertIdx = position === "before" ? targetIdx : targetIdx + 1;
+      const result = [...remaining];
+      result.splice(insertIdx, 0, ...dragged);
+
+      // Only update if order actually changed
+      if (result.every((t, i) => t.id === prev[i].id)) return prev;
+      return result;
+    });
+  }, []);
+
   return {
     tabs, setTabs,
     activeId, setActiveId,
@@ -234,6 +256,7 @@ export const useTabManager = ({
     closeSelectedTabs,
     saveFile,
     reorderTabs,
+    reorderMultipleTabs,
     toggleSelectTab,
     rangeSelectTabs,
     clearSelection,
