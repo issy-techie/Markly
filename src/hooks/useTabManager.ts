@@ -22,6 +22,7 @@ export const useTabManager = ({
 }: UseTabManagerOptions) => {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedTabIds, setSelectedTabIds] = useState<Set<string>>(new Set());
 
   const activeTab = tabs.find((t) => t.id === activeId) || null;
 
@@ -157,6 +158,55 @@ export const useTabManager = ({
     setActiveId(null);
   };
 
+  // --- Tab multi-select ---
+  const toggleSelectTab = useCallback((tabId: string) => {
+    setSelectedTabIds(prev => {
+      const next = new Set(prev);
+      if (next.has(tabId)) {
+        next.delete(tabId);
+      } else {
+        next.add(tabId);
+      }
+      return next;
+    });
+  }, []);
+
+  const rangeSelectTabs = useCallback((targetId: string) => {
+    const anchorId = activeId;
+    if (!anchorId) {
+      setSelectedTabIds(new Set([targetId]));
+      return;
+    }
+    const anchorIdx = tabs.findIndex(t => t.id === anchorId);
+    const targetIdx = tabs.findIndex(t => t.id === targetId);
+    if (anchorIdx < 0 || targetIdx < 0) return;
+    const start = Math.min(anchorIdx, targetIdx);
+    const end = Math.max(anchorIdx, targetIdx);
+    const rangeIds = new Set(tabs.slice(start, end + 1).map(t => t.id));
+    setSelectedTabIds(rangeIds);
+  }, [activeId, tabs]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedTabIds(new Set());
+  }, []);
+
+  const closeSelectedTabs = async () => {
+    if (selectedTabIds.size === 0) return;
+    const targets = tabs.filter(t => selectedTabIds.has(t.id));
+    const hasModified = targets.some(t => t.isModified);
+    if (hasModified) {
+      const ok = await ask("未保存のタブがあります。閉じますか？", { title: "Markly", kind: "warning" });
+      if (!ok) return;
+    }
+    const remainingTabs = tabs.filter(t => !selectedTabIds.has(t.id));
+    setTabs(remainingTabs);
+    if (activeId && selectedTabIds.has(activeId)) {
+      saveCursorPosition(activeId, tabs, editorViewRef.current, cursorPositionsRef.current);
+      setActiveId(remainingTabs.length > 0 ? remainingTabs[remainingTabs.length - 1].id : null);
+    }
+    setSelectedTabIds(new Set());
+  };
+
   const reorderTabs = useCallback((fromIndex: number, toIndex: number) => {
     setTabs(prev => {
       if (fromIndex === toIndex) return prev;
@@ -173,6 +223,7 @@ export const useTabManager = ({
     tabs, setTabs,
     activeId, setActiveId,
     activeTab,
+    selectedTabIds, setSelectedTabIds,
     openTargetFile,
     createNewTab,
     closeTab,
@@ -180,7 +231,11 @@ export const useTabManager = ({
     closeTabsToTheLeft,
     closeTabsToTheRight,
     closeAllTabs,
+    closeSelectedTabs,
     saveFile,
     reorderTabs,
+    toggleSelectTab,
+    rangeSelectTabs,
+    clearSelection,
   };
 };

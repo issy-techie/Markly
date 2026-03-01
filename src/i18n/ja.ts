@@ -125,6 +125,7 @@ const ja: Translations = {
   tabCloseLeft: "左側をすべて閉じる",
   tabCloseRight: "右側をすべて閉じる",
   tabCloseAll: "すべて閉じる",
+  tabCloseSelected: "選択したタブを閉じる",
 
   // --- Language selector (first launch) ---
   selectLanguageTitle: "言語を選択 / Select Language",

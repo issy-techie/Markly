@@ -133,6 +133,7 @@ function App() {
     tabs, setTabs,
     activeId, setActiveId,
     activeTab,
+    selectedTabIds,
     openTargetFile,
     createNewTab,
     closeTab,
@@ -140,8 +141,12 @@ function App() {
     closeTabsToTheLeft,
     closeTabsToTheRight,
     closeAllTabs,
+    closeSelectedTabs,
     saveFile,
     reorderTabs,
+    toggleSelectTab,
+    rangeSelectTabs,
+    clearSelection,
   } = useTabManager({ addToast, refreshTree, editorViewRef, cursorPositionsRef });
 
   const {
@@ -902,8 +907,20 @@ function App() {
     }
   }, [expandedFolders, fileTree, loadChildren, findNodeChildren, setExpandedFolders]);
 
-  // --- Save cursor position + switch active tab ---
-  const handleTabClick = useCallback((tabId: string) => {
+  // --- Save cursor position + switch active tab (with multi-select support) ---
+  const handleTabClick = useCallback((tabId: string, e?: React.MouseEvent) => {
+    if (e && (e.ctrlKey || e.metaKey)) {
+      // Ctrl+click: toggle individual selection
+      toggleSelectTab(tabId);
+      return;
+    }
+    if (e && e.shiftKey) {
+      // Shift+click: range selection from active tab to clicked tab
+      rangeSelectTabs(tabId);
+      return;
+    }
+    // Normal click: clear selection and switch tab
+    clearSelection();
     saveCursorPosition(activeId, tabs, editorViewRef.current, cursorPositionsRef.current);
     // Save scroll position of the current tab before switching
     if (activeId && editorViewRef.current) {
@@ -911,7 +928,7 @@ function App() {
       scrollPositionsRef.current[key] = editorViewRef.current.scrollDOM.scrollTop;
     }
     setActiveId(tabId);
-  }, [activeId, tabs, setActiveId]);
+  }, [activeId, tabs, setActiveId, toggleSelectTab, rangeSelectTabs, clearSelection]);
 
   // --- Context menu: Open in system file explorer ---
   const handleOpenInExplorer = useCallback(async (filePath: string) => {
@@ -1100,6 +1117,7 @@ function App() {
         <TabBar
           tabs={tabs}
           activeId={activeId}
+          selectedTabIds={selectedTabIds}
           isDark={isDark}
           showReference={showReference}
           showOutline={showOutline}
@@ -1218,11 +1236,13 @@ function App() {
           config={tabContextMenu}
           tabCount={tabs.length}
           tabIndex={tabs.findIndex(t => t.id === tabContextMenu.tabId)}
+          selectedCount={selectedTabIds.size}
           onClose={(id) => { closeTab(id); setTabContextMenu(null); }}
           onCloseOthers={(id) => { closeOtherTabs(id); setTabContextMenu(null); }}
           onCloseLeft={(id) => { closeTabsToTheLeft(id); setTabContextMenu(null); }}
           onCloseRight={(id) => { closeTabsToTheRight(id); setTabContextMenu(null); }}
           onCloseAll={() => { closeAllTabs(); setTabContextMenu(null); }}
+          onCloseSelected={() => { closeSelectedTabs(); setTabContextMenu(null); }}
         />
       )}
 

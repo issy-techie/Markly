@@ -1,5 +1,5 @@
 import React from "react";
-import { X, XCircle, ArrowLeftFromLine, ArrowRightFromLine, Trash2 } from "lucide-react";
+import { X, XCircle, ArrowLeftFromLine, ArrowRightFromLine, Trash2, CheckSquare } from "lucide-react";
 import type { TabContextMenuConfig } from "../../types";
 import { useI18n } from "../../hooks/useI18n";
 
@@ -7,22 +7,26 @@ interface TabContextMenuProps {
   config: TabContextMenuConfig;
   tabCount: number;
   tabIndex: number;
+  selectedCount: number;
   onClose: (tabId: string) => void;
   onCloseOthers: (tabId: string) => void;
   onCloseLeft: (tabId: string) => void;
   onCloseRight: (tabId: string) => void;
   onCloseAll: () => void;
+  onCloseSelected: () => void;
 }
 
 const TabContextMenu: React.FC<TabContextMenuProps> = ({
   config,
   tabCount,
   tabIndex,
+  selectedCount,
   onClose,
   onCloseOthers,
   onCloseLeft,
   onCloseRight,
   onCloseAll,
+  onCloseSelected,
 }) => {
   const t = useI18n();
   const hasOthers = tabCount > 1;
@@ -63,6 +67,17 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
       >
         <ArrowRightFromLine size={14} /> {t.tabCloseRight}
       </button>
+      {selectedCount >= 2 && (
+        <>
+          <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+          <button
+            onClick={() => onCloseSelected()}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-blue-500 hover:text-white transition-colors"
+          >
+            <CheckSquare size={14} /> {t.tabCloseSelected} ({selectedCount})
+          </button>
+        </>
+      )}
       <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
       <button
         onClick={() => onCloseAll()}

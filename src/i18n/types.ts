@@ -124,6 +124,7 @@ export interface Translations {
   tabCloseLeft: string;
   tabCloseRight: string;
   tabCloseAll: string;
+  tabCloseSelected: string;
 
   // Language selector
   selectLanguageTitle: string;

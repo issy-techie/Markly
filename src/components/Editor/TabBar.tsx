@@ -7,11 +7,12 @@ import IconButton from "../ui/IconButton";
 interface TabBarProps {
   tabs: Tab[];
   activeId: string | null;
+  selectedTabIds: Set<string>;
   isDark: boolean;
   showReference: boolean;
   showOutline: boolean;
   showHamburgerMenu: boolean;
-  onTabClick: (tabId: string) => void;
+  onTabClick: (tabId: string, e?: React.MouseEvent) => void;
   onCloseTab: (tabId: string, e?: React.MouseEvent) => void;
   onCreateNewTab: () => void;
   onToggleReference: () => void;
@@ -34,6 +35,7 @@ interface TabBarProps {
 const TabBar: React.FC<TabBarProps> = ({
   tabs,
   activeId,
+  selectedTabIds,
   isDark,
   showReference,
   showOutline,
@@ -59,10 +61,13 @@ const TabBar: React.FC<TabBarProps> = ({
   return (
     <div className="h-8 flex items-end bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-1 gap-0.5">
       <div className="flex-1 flex h-full overflow-x-auto tab-scrollbar items-end">
-        {tabs.map((tab, index) => (
+        {tabs.map((tab, index) => {
+          const isSelected = selectedTabIds.has(tab.id);
+          const isActive = activeId === tab.id;
+          return (
           <div
             key={tab.id}
-            onClick={() => onTabClick(tab.id)}
+            onClick={(e) => onTabClick(tab.id, e)}
             onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onCloseTab(tab.id, e); } }}
             onContextMenu={(e) => onTabContextMenu(e, tab.id)}
             onMouseDown={(e) => onTabMouseDown(e, index)}
@@ -70,10 +75,11 @@ const TabBar: React.FC<TabBarProps> = ({
               flex items-center gap-2 px-3 py-1.5 text-xs rounded-t-lg
               cursor-pointer group flex-shrink-0 min-w-[80px] max-w-[200px]
               ${draggedIndex === null ? "transition-all duration-150" : ""}
-              ${activeId === tab.id
+              ${isActive
                 ? "bg-white dark:bg-slate-900 shadow-sm font-medium -mb-px border-t border-l border-r border-slate-200 dark:border-slate-700"
                 : "bg-slate-200/50 dark:bg-slate-800/50 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 mt-1"
               }
+              ${isSelected ? "ring-2 ring-blue-400 ring-inset" : ""}
               ${draggedIndex === index ? "opacity-40" : ""}
               ${dropTargetIndex === index && dropPosition === "before" ? "tab-drop-before" : ""}
               ${dropTargetIndex === index && dropPosition === "after" ? "tab-drop-after" : ""}
@@ -83,7 +89,8 @@ const TabBar: React.FC<TabBarProps> = ({
             {tab.isModified && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>}
             <button onClick={(e) => onCloseTab(tab.id, e)} className="ml-1 opacity-0 group-hover:opacity-100 p-0.5 hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition-opacity"><X size={12} /></button>
           </div>
-        ))}
+          );
+        })}
       </div>
       <div className="flex items-center h-full bg-slate-100 dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 px-2 flex-shrink-0 gap-1">
         <IconButton onClick={onCreateNewTab} title="New Tab"><Plus size={16} /></IconButton>
