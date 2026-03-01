@@ -126,6 +126,10 @@ export interface Translations {
   tabCloseAll: string;
   tabCloseSelected: string;
 
+  // Zen mode
+  zenMode: string;
+  zenModeExit: string;
+
   // Language selector
   selectLanguageTitle: string;
   selectLanguageDesc: string;

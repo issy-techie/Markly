@@ -127,6 +127,10 @@ const en: Translations = {
   tabCloseAll: "Close All",
   tabCloseSelected: "Close Selected Tabs",
 
+  // --- Zen mode ---
+  zenMode: "Zen Mode",
+  zenModeExit: "Press Esc or F11 to exit Zen Mode",
+
   // --- Language selector (first launch) ---
   selectLanguageTitle: "Select Language / 言語を選択",
   selectLanguageDesc: "Choose the language for Markly.\nYou can change this later in Settings.",
