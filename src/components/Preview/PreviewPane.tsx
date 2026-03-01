@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useCallback } from "react";
 import { X, Plus, Pipette } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
+import remarkWikiLink from "../../utils/remarkWikiLink";
 import type { ReferenceCategory } from "../../constants";
 import { createMarkdownComponents } from "./MarkdownRenderers";
 import { useI18n } from "../../hooks/useI18n";
@@ -21,6 +22,7 @@ interface PreviewPaneProps {
   onCloseReference: () => void;
   onInsertSnippet: (snippet: string) => void;
   markdownReference: ReferenceCategory[];
+  onOpenWikiLink?: (linkTarget: string) => void;
 }
 
 const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
@@ -36,11 +38,12 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
   onCloseReference,
   onInsertSnippet,
   markdownReference,
+  onOpenWikiLink,
 }, ref) => {
   const t = useI18n();
   const markdownComponents = useMemo(
-    () => createMarkdownComponents({ activeFilePath, isDark }),
-    [activeFilePath, isDark]
+    () => createMarkdownComponents({ activeFilePath, isDark, onOpenWikiLink }),
+    [activeFilePath, isDark, onOpenWikiLink]
   );
 
   // Color picker state
@@ -60,9 +63,10 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
       {/* Scrollable preview content */}
       <div ref={ref} className={`p-8 overflow-y-auto preview-area custom-scrollbar flex-1 ${isDark ? "prose prose-invert bg-slate-900" : "prose bg-slate-50"}`} style={{ fontFamily: previewFontFamily, fontSize: `${previewFontSize}px` }}>
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, ...(lineBreaks ? [remarkBreaks] : [])]}
+          remarkPlugins={[remarkGfm, remarkWikiLink, ...(lineBreaks ? [remarkBreaks] : [])]}
           rehypePlugins={[rehypeRaw]}
           components={markdownComponents}
+          urlTransform={(url) => url.startsWith("wikilink:") ? url : defaultUrlTransform(url)}
         >
           {content}
         </ReactMarkdown>

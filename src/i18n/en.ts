@@ -163,6 +163,10 @@ const en: Translations = {
   projectSearchTruncated: "Results limited to 1000 matches",
   projectSearchInvalidRegex: "Invalid regular expression",
   projectSearchSearching: "Searching...",
+
+  // --- Wiki Link ---
+  wikiLinkNotFound: "No file found matching \"{name}\"",
+  wikiLinkNoProject: "Open a project folder to use Wiki Links",
 };
 
 export default en;

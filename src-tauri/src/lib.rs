@@ -152,6 +152,85 @@ fn search_in_project(
     Ok(matches)
 }
 
+/// Resolve a wiki link name to an absolute file path.
+///
+/// Resolution priority:
+/// 1. If `link_name` contains a path separator, resolve relative to the current file's directory.
+/// 2. Same directory as the current file.
+/// 3. First matching `.md` file found anywhere in the project (WalkDir).
+///
+/// Appends `.md` extension if not already present.
+#[tauri::command]
+fn resolve_wiki_link(
+    root_path: String,
+    link_name: String,
+    current_file_path: String,
+) -> Option<String> {
+    if link_name.trim().is_empty() {
+        return None;
+    }
+
+    // Normalise the target: append .md if missing
+    let target = if link_name.ends_with(".md") {
+        link_name.clone()
+    } else {
+        format!("{}.md", link_name)
+    };
+
+    let current = Path::new(&current_file_path);
+    let current_dir = current.parent()?;
+
+    // Case 1: relative path (contains '/' or '\')
+    if target.contains('/') || target.contains('\\') {
+        let candidate = current_dir.join(&target);
+        if candidate.is_file() {
+            return Some(candidate.to_string_lossy().to_string());
+        }
+        return None;
+    }
+
+    // Case 2: same directory
+    let same_dir_candidate = current_dir.join(&target);
+    if same_dir_candidate.is_file() {
+        return Some(same_dir_candidate.to_string_lossy().to_string());
+    }
+
+    // Case 3: search the project tree
+    let root = Path::new(&root_path);
+    if !root.is_dir() {
+        return None;
+    }
+
+    let walker = WalkDir::new(root).into_iter().filter_entry(|entry| {
+        let name = entry.file_name().to_string_lossy();
+        if name.starts_with('.') {
+            return false;
+        }
+        if entry.file_type().is_dir() && (name.ends_with(".assets") || name == "node_modules") {
+            return false;
+        }
+        true
+    });
+
+    for entry in walker.filter_map(|e| e.ok()) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let path = entry.path();
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        if ext != "md" {
+            continue;
+        }
+        if let Some(file_name) = path.file_name() {
+            if file_name.to_string_lossy() == target {
+                return Some(path.to_string_lossy().to_string());
+            }
+        }
+    }
+
+    None
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -167,7 +246,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .invoke_handler(tauri::generate_handler![search_in_project])
+        .invoke_handler(tauri::generate_handler![search_in_project, resolve_wiki_link])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -163,6 +163,10 @@ const ja: Translations = {
   projectSearchTruncated: "結果は1000件に制限されています",
   projectSearchInvalidRegex: "無効な正規表現",
   projectSearchSearching: "検索中...",
+
+  // --- Wiki Link ---
+  wikiLinkNotFound: "「{name}」に一致するファイルが見つかりません",
+  wikiLinkNoProject: "Wiki Linkを使用するにはプロジェクトフォルダを開いてください",
 };
 
 export default ja;

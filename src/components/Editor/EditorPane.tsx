@@ -5,6 +5,7 @@ import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import { githubLight } from "@uiw/codemirror-theme-github";
 import { oneDark } from "@codemirror/theme-one-dark";
+import { wikiLinkHighlight } from "../../extensions/wikiLinkHighlight";
 
 interface EditorPaneProps {
   content: string;
@@ -39,6 +40,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         height="100%"
         extensions={[
           markdown({ base: markdownLanguage, codeLanguages: languages }),
+          wikiLinkHighlight,
           ...(lineWrapping ? [EditorView.lineWrapping] : []),
           EditorView.theme({
             "&": { fontFamily: editorFontFamily, fontSize: `${editorFontSize}px` },
