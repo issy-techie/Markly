@@ -97,6 +97,66 @@ export const useTabManager = ({
     }
   };
 
+  const closeOtherTabs = async (keepId: string) => {
+    const others = tabs.filter(t => t.id !== keepId);
+    const hasModified = others.some(t => t.isModified);
+    if (hasModified) {
+      const ok = await ask("未保存のタブがあります。閉じますか？", { title: "Markly", kind: "warning" });
+      if (!ok) return;
+    }
+    setTabs(prev => prev.filter(t => t.id === keepId));
+    if (activeId !== keepId) {
+      saveCursorPosition(activeId, tabs, editorViewRef.current, cursorPositionsRef.current);
+      setActiveId(keepId);
+    }
+  };
+
+  const closeTabsToTheLeft = async (targetId: string) => {
+    const idx = tabs.findIndex(t => t.id === targetId);
+    if (idx <= 0) return;
+    const leftTabs = tabs.slice(0, idx);
+    const hasModified = leftTabs.some(t => t.isModified);
+    if (hasModified) {
+      const ok = await ask("未保存のタブがあります。閉じますか？", { title: "Markly", kind: "warning" });
+      if (!ok) return;
+    }
+    const keepTabs = tabs.slice(idx);
+    setTabs(keepTabs);
+    if (activeId && !keepTabs.find(t => t.id === activeId)) {
+      saveCursorPosition(activeId, tabs, editorViewRef.current, cursorPositionsRef.current);
+      setActiveId(keepTabs[0].id);
+    }
+  };
+
+  const closeTabsToTheRight = async (targetId: string) => {
+    const idx = tabs.findIndex(t => t.id === targetId);
+    if (idx < 0) return;
+    const rightTabs = tabs.slice(idx + 1);
+    if (rightTabs.length === 0) return;
+    const hasModified = rightTabs.some(t => t.isModified);
+    if (hasModified) {
+      const ok = await ask("未保存のタブがあります。閉じますか？", { title: "Markly", kind: "warning" });
+      if (!ok) return;
+    }
+    const keepTabs = tabs.slice(0, idx + 1);
+    setTabs(keepTabs);
+    if (activeId && !keepTabs.find(t => t.id === activeId)) {
+      saveCursorPosition(activeId, tabs, editorViewRef.current, cursorPositionsRef.current);
+      setActiveId(keepTabs[keepTabs.length - 1].id);
+    }
+  };
+
+  const closeAllTabs = async () => {
+    const hasModified = tabs.some(t => t.isModified);
+    if (hasModified) {
+      const ok = await ask("未保存のタブがあります。閉じますか？", { title: "Markly", kind: "warning" });
+      if (!ok) return;
+    }
+    saveCursorPosition(activeId, tabs, editorViewRef.current, cursorPositionsRef.current);
+    setTabs([]);
+    setActiveId(null);
+  };
+
   const reorderTabs = useCallback((fromIndex: number, toIndex: number) => {
     setTabs(prev => {
       if (fromIndex === toIndex) return prev;
@@ -116,6 +176,10 @@ export const useTabManager = ({
     openTargetFile,
     createNewTab,
     closeTab,
+    closeOtherTabs,
+    closeTabsToTheLeft,
+    closeTabsToTheRight,
+    closeAllTabs,
     saveFile,
     reorderTabs,
   };

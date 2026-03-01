@@ -49,10 +49,16 @@ export interface FileEntry {
   children?: FileEntry[];
 }
 
-export interface ContextMenuConfig { 
-  x: number; 
-  y: number; 
-  path: string; 
+export interface ContextMenuConfig {
+  x: number;
+  y: number;
+  path: string;
   isDirectory: boolean;
   isBackground?: boolean;
+}
+
+export interface TabContextMenuConfig {
+  x: number;
+  y: number;
+  tabId: string;
 }

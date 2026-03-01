@@ -119,6 +119,13 @@ const ja: Translations = {
   outline: "アウトライン",
   outlineEmpty: "見出しがありません",
 
+  // --- Tab context menu ---
+  tabClose: "閉じる",
+  tabCloseOthers: "他を閉じる",
+  tabCloseLeft: "左側をすべて閉じる",
+  tabCloseRight: "右側をすべて閉じる",
+  tabCloseAll: "すべて閉じる",
+
   // --- Language selector (first launch) ---
   selectLanguageTitle: "言語を選択 / Select Language",
   selectLanguageDesc: "Marklyで使用する言語を選択してください。\nこの設定は後から変更できます。",

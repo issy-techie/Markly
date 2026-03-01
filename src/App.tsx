@@ -9,7 +9,7 @@ import { openPath } from "@tauri-apps/plugin-opener";
 import { readTextFile, writeTextFile, readDir, rename, remove, copyFile, mkdir, exists, writeFile } from "@tauri-apps/plugin-fs";
 import "./App.css";
 
-import type { FileEntry, Tab, ContextMenuConfig, Language } from "./types";
+import type { FileEntry, Tab, ContextMenuConfig, TabContextMenuConfig, Language } from "./types";
 import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, VIDEO_MIME_MAP, getMarkdownReference } from "./constants";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { isProjectLocked } from "./utils/lockFile";
@@ -39,6 +39,7 @@ import SearchDialog from "./components/Dialogs/SearchDialog";
 import SettingsDialog from "./components/Dialogs/SettingsDialog";
 import AboutDialog from "./components/Dialogs/AboutDialog";
 import ContextMenu from "./components/Dialogs/ContextMenu";
+import TabContextMenu from "./components/Dialogs/TabContextMenu";
 import InputDialog from "./components/Dialogs/InputDialog";
 import { getTranslations, LANGUAGE_OPTIONS } from "./i18n";
 import { I18nContext } from "./hooks/useI18n";
@@ -49,6 +50,7 @@ mermaid.initialize({ startOnLoad: true, theme: "default" });
 function App() {
   // --- UI state ---
   const [contextMenu, setContextMenu] = useState<ContextMenuConfig | null>(null);
+  const [tabContextMenu, setTabContextMenu] = useState<TabContextMenuConfig | null>(null);
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
@@ -134,6 +136,10 @@ function App() {
     openTargetFile,
     createNewTab,
     closeTab,
+    closeOtherTabs,
+    closeTabsToTheLeft,
+    closeTabsToTheRight,
+    closeAllTabs,
     saveFile,
     reorderTabs,
   } = useTabManager({ addToast, refreshTree, editorViewRef, cursorPositionsRef });
@@ -421,6 +427,7 @@ function App() {
     ];
 
     const escapeTargets: [boolean, () => void][] = [
+      [tabContextMenu !== null, () => setTabContextMenu(null)],
       [showSearchDialog, () => setShowSearchDialog(false)],
       [showHamburgerMenu, () => setShowHamburgerMenu(false)],
       [showSettingsDialog, () => setShowSettingsDialog(false)],
@@ -449,7 +456,7 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tabs, activeId, reorderTabs, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog]);
+  }, [tabs, activeId, reorderTabs, tabContextMenu, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog]);
 
   // --- Close hamburger menu on outside click ---
   useEffect(() => {
@@ -838,6 +845,13 @@ function App() {
     view.focus();
   };
 
+  // --- Tab context menu handler ---
+  const handleTabContextMenu = useCallback((e: React.MouseEvent, tabId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTabContextMenu({ x: e.pageX, y: e.pageY, tabId });
+  }, []);
+
   // --- Context menu handler ---
   const handleContextMenu = (e: React.MouseEvent, entry: FileEntry, isBackground: boolean = false) => {
     e.preventDefault();
@@ -852,7 +866,10 @@ function App() {
   };
 
   useEffect(() => {
-    const closeMenu = () => setContextMenu(null);
+    const closeMenu = () => {
+      setContextMenu(null);
+      setTabContextMenu(null);
+    };
     window.addEventListener("click", closeMenu);
     return () => window.removeEventListener("click", closeMenu);
   }, []);
@@ -1089,6 +1106,7 @@ function App() {
           showHamburgerMenu={showHamburgerMenu}
           onTabClick={handleTabClick}
           onCloseTab={closeTab}
+          onTabContextMenu={handleTabContextMenu}
           onCreateNewTab={createNewTab}
           onToggleReference={() => setShowReference(!showReference)}
           onToggleOutline={() => setShowOutline(!showOutline)}
@@ -1191,6 +1209,20 @@ function App() {
           onDuplicate={duplicateFile}
           onRename={renameFile}
           onDelete={deleteFile}
+        />
+      )}
+
+      {/* Tab context menu */}
+      {tabContextMenu && (
+        <TabContextMenu
+          config={tabContextMenu}
+          tabCount={tabs.length}
+          tabIndex={tabs.findIndex(t => t.id === tabContextMenu.tabId)}
+          onClose={(id) => { closeTab(id); setTabContextMenu(null); }}
+          onCloseOthers={(id) => { closeOtherTabs(id); setTabContextMenu(null); }}
+          onCloseLeft={(id) => { closeTabsToTheLeft(id); setTabContextMenu(null); }}
+          onCloseRight={(id) => { closeTabsToTheRight(id); setTabContextMenu(null); }}
+          onCloseAll={() => { closeAllTabs(); setTabContextMenu(null); }}
         />
       )}
 
