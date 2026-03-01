@@ -154,4 +154,12 @@ export interface Translations {
   // Language selector
   selectLanguageTitle: string;
   selectLanguageDesc: string;
+
+  // Project search
+  projectSearch: string;
+  projectSearchPlaceholder: string;
+  projectSearchNoResults: string;
+  projectSearchTruncated: string;
+  projectSearchInvalidRegex: string;
+  projectSearchSearching: string;
 }

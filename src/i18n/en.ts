@@ -155,6 +155,14 @@ const en: Translations = {
   // --- Language selector (first launch) ---
   selectLanguageTitle: "Select Language / 言語を選択",
   selectLanguageDesc: "Choose the language for Markly.\nYou can change this later in Settings.",
+
+  // --- Project search ---
+  projectSearch: "Search in Project",
+  projectSearchPlaceholder: "Search in files...",
+  projectSearchNoResults: "No results found",
+  projectSearchTruncated: "Results limited to 1000 matches",
+  projectSearchInvalidRegex: "Invalid regular expression",
+  projectSearchSearching: "Searching...",
 };
 
 export default en;

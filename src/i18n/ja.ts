@@ -155,6 +155,14 @@ const ja: Translations = {
   // --- Language selector (first launch) ---
   selectLanguageTitle: "言語を選択 / Select Language",
   selectLanguageDesc: "Marklyで使用する言語を選択してください。\nこの設定は後から変更できます。",
+
+  // --- Project search ---
+  projectSearch: "プロジェクト内検索",
+  projectSearchPlaceholder: "ファイル内を検索...",
+  projectSearchNoResults: "結果が見つかりません",
+  projectSearchTruncated: "結果は1000件に制限されています",
+  projectSearchInvalidRegex: "無効な正規表現",
+  projectSearchSearching: "検索中...",
 };
 
 export default ja;

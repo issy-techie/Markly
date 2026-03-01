@@ -62,3 +62,20 @@ export interface TabContextMenuConfig {
   y: number;
   tabId: string;
 }
+
+// --- Project-wide search ---
+
+export interface ProjectSearchMatch {
+  file_path: string;
+  file_name: string;
+  line_number: number;   // 1-based
+  line_content: string;
+  match_start: number;   // character offset
+  match_end: number;
+}
+
+export interface ProjectSearchFileGroup {
+  filePath: string;
+  fileName: string;
+  matches: ProjectSearchMatch[];
+}

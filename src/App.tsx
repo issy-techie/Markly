@@ -26,6 +26,7 @@ import { useTabManager } from "./hooks/useTabManager";
 import { useTabDragDrop } from "./hooks/useTabDragDrop";
 import { usePersistence } from "./hooks/usePersistence";
 import { useScrollSync } from "./hooks/useScrollSync";
+import { useProjectSearch } from "./hooks/useProjectSearch";
 import { useInputDialog } from "./hooks/useInputDialog";
 import ToastContainer from "./components/Toast";
 import Sidebar from "./components/Sidebar/Sidebar";
@@ -66,6 +67,7 @@ function App() {
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showReference, setShowReference] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
+  const [showProjectSearch, setShowProjectSearch] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const [refActiveCategory, setRefActiveCategory] = useState("headings");
 
@@ -197,6 +199,17 @@ function App() {
   } = useSearch(editorViewRef);
 
   const { inputDialogConfig, promptUser, handleInputConfirm, handleInputCancel } = useInputDialog();
+
+  const {
+    query: projectSearchQuery, setQuery: setProjectSearchQuery,
+    caseSensitive: projectSearchCaseSensitive, setCaseSensitive: setProjectSearchCaseSensitive,
+    useRegex: projectSearchUseRegex, setUseRegex: setProjectSearchUseRegex,
+    results: projectSearchResults,
+    totalMatches: projectSearchTotalMatches,
+    isSearching: projectSearchIsSearching,
+    error: projectSearchError,
+    clearSearch: clearProjectSearch,
+  } = useProjectSearch(projectRoot);
 
   const {
     persistAppState, flushAppState, isInitialized, tabsRef, loadedConfig,
@@ -505,6 +518,7 @@ function App() {
     const keyMap: { key: string; ctrl?: boolean; shift?: boolean; handler: () => void }[] = [
       { key: "s", ctrl: true, handler: () => saveFile() },
       { key: "f", ctrl: true, handler: () => setShowSearchDialog(true) },
+      { key: "F", ctrl: true, shift: true, handler: () => setShowProjectSearch(prev => !prev) },
       { key: "h", ctrl: true, handler: () => setShowSearchDialog(true) },
       { key: "ArrowLeft", ctrl: true, shift: true, handler: () => {
         const idx = tabs.findIndex(t => t.id === activeId);
@@ -519,6 +533,7 @@ function App() {
     const escapeTargets: [boolean, () => void][] = [
       [tabContextMenu !== null, () => setTabContextMenu(null)],
       [showSearchDialog, () => setShowSearchDialog(false)],
+      [showProjectSearch, () => setShowProjectSearch(false)],
       [showHamburgerMenu, () => setShowHamburgerMenu(false)],
       [showSettingsDialog, () => setShowSettingsDialog(false)],
       [showAboutDialog, () => setShowAboutDialog(false)],
@@ -555,7 +570,7 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tabs, activeId, reorderTabs, tabContextMenu, showSearchDialog, showHamburgerMenu, showSettingsDialog, showAboutDialog, zenMode, selectedTabIds.size, clearSelection]);
+  }, [tabs, activeId, reorderTabs, tabContextMenu, showSearchDialog, showProjectSearch, showHamburgerMenu, showSettingsDialog, showAboutDialog, zenMode, selectedTabIds.size, clearSelection]);
 
   // --- Close hamburger menu on outside click ---
   useEffect(() => {
@@ -1163,6 +1178,26 @@ function App() {
     window.print();
   }, []);
 
+  // --- Project search result click handler ---
+  const handleProjectSearchResultClick = useCallback(async (filePath: string, lineNumber: number) => {
+    await openTargetFile(filePath);
+    // After file is opened, move cursor to the target line
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const view = editorViewRef.current;
+        if (!view) return;
+        const doc = view.state.doc;
+        if (lineNumber > doc.lines) return;
+        const lineObj = doc.line(lineNumber);
+        view.dispatch({
+          selection: { anchor: lineObj.from, head: lineObj.from },
+          effects: EditorView.scrollIntoView(lineObj.from, { y: "center" }),
+        });
+        view.focus();
+      }, 100);
+    });
+  }, [openTargetFile]);
+
   // --- Open new window ---
   const handleNewWindow = useCallback(() => {
     const label = `markly-${Date.now()}`;
@@ -1322,6 +1357,20 @@ function App() {
             onNewWindow={handleNewWindow}
             onTabClick={handleTabClick}
             onResizeMouseDown={handleMouseDown}
+            showProjectSearch={showProjectSearch}
+            onToggleProjectSearch={() => setShowProjectSearch(prev => !prev)}
+            projectSearchQuery={projectSearchQuery}
+            onProjectSearchQueryChange={setProjectSearchQuery}
+            projectSearchCaseSensitive={projectSearchCaseSensitive}
+            onProjectSearchCaseSensitiveChange={setProjectSearchCaseSensitive}
+            projectSearchUseRegex={projectSearchUseRegex}
+            onProjectSearchUseRegexChange={setProjectSearchUseRegex}
+            projectSearchResults={projectSearchResults}
+            projectSearchTotalMatches={projectSearchTotalMatches}
+            projectSearchIsSearching={projectSearchIsSearching}
+            projectSearchError={projectSearchError}
+            onProjectSearchResultClick={handleProjectSearchResultClick}
+            onProjectSearchClear={clearProjectSearch}
           />
 
           {/* Sidebar resize handle */}
@@ -1353,6 +1402,7 @@ function App() {
             onToggleTheme={toggleTheme}
             onToggleHamburgerMenu={() => setShowHamburgerMenu(prev => !prev)}
             onOpenSearchDialog={() => setShowSearchDialog(true)}
+            onOpenProjectSearch={() => setShowProjectSearch(true)}
             onOpenSettingsDialog={() => setShowSettingsDialog(true)}
             onOpenAboutDialog={() => setShowAboutDialog(true)}
             onExportHTML={handleExportHTML}
