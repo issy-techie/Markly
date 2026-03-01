@@ -118,6 +118,13 @@ export interface Translations {
   outline: string;
   outlineEmpty: string;
 
+  // Tab context menu
+  tabClose: string;
+  tabCloseOthers: string;
+  tabCloseLeft: string;
+  tabCloseRight: string;
+  tabCloseAll: string;
+
   // Language selector
   selectLanguageTitle: string;
   selectLanguageDesc: string;

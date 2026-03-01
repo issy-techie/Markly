@@ -119,6 +119,13 @@ const en: Translations = {
   outline: "Outline",
   outlineEmpty: "No headings found",
 
+  // --- Tab context menu ---
+  tabClose: "Close",
+  tabCloseOthers: "Close Others",
+  tabCloseLeft: "Close to the Left",
+  tabCloseRight: "Close to the Right",
+  tabCloseAll: "Close All",
+
   // --- Language selector (first launch) ---
   selectLanguageTitle: "Select Language / 言語を選択",
   selectLanguageDesc: "Choose the language for Markly.\nYou can change this later in Settings.",

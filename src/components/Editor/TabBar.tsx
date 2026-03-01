@@ -22,6 +22,8 @@ interface TabBarProps {
   onOpenSettingsDialog: () => void;
   onOpenAboutDialog: () => void;
   onExit: () => void;
+  // Tab context menu
+  onTabContextMenu: (e: React.MouseEvent, tabId: string) => void;
   // Tab drag-and-drop reorder
   draggedIndex: number | null;
   dropTargetIndex: number | null;
@@ -47,6 +49,7 @@ const TabBar: React.FC<TabBarProps> = ({
   onOpenSettingsDialog,
   onOpenAboutDialog,
   onExit,
+  onTabContextMenu,
   draggedIndex,
   dropTargetIndex,
   dropPosition,
@@ -61,6 +64,7 @@ const TabBar: React.FC<TabBarProps> = ({
             key={tab.id}
             onClick={() => onTabClick(tab.id)}
             onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onCloseTab(tab.id, e); } }}
+            onContextMenu={(e) => onTabContextMenu(e, tab.id)}
             onMouseDown={(e) => onTabMouseDown(e, index)}
             className={`
               flex items-center gap-2 px-3 py-1.5 text-xs rounded-t-lg
