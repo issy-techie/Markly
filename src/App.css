@@ -227,6 +227,19 @@ html, body, #root {
   backdrop-filter: blur(4px);
 }
 
+/* Wiki Link ハイライト (CodeMirror エディタ内) */
+.cm-wiki-link {
+  color: #059669;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.dark .cm-wiki-link {
+  color: #34d399;
+}
+
 /* テーブル編集ツールバー */
 .table-toolbar {
   position: fixed;

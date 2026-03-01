@@ -162,4 +162,8 @@ export interface Translations {
   projectSearchTruncated: string;
   projectSearchInvalidRegex: string;
   projectSearchSearching: string;
+
+  // Wiki Link
+  wikiLinkNotFound: string;
+  wikiLinkNoProject: string;
 }

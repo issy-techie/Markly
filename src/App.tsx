@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } fr
 import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { undo, redo } from "@codemirror/commands";
 import mermaid from "mermaid";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open, ask, save } from "@tauri-apps/plugin-dialog";
@@ -1198,6 +1199,30 @@ function App() {
     });
   }, [openTargetFile]);
 
+  // --- Wiki Link click handler ---
+  const handleOpenWikiLink = useCallback(async (linkTarget: string) => {
+    if (!activeTab?.path || !projectRoot) {
+      addToast(t.wikiLinkNoProject, "warning");
+      return;
+    }
+
+    try {
+      const resolvedPath = await invoke<string | null>("resolve_wiki_link", {
+        rootPath: projectRoot,
+        linkName: linkTarget,
+        currentFilePath: activeTab.path,
+      });
+
+      if (resolvedPath) {
+        await openTargetFile(resolvedPath);
+      } else {
+        addToast(t.wikiLinkNotFound.replace("{name}", linkTarget), "warning");
+      }
+    } catch (e) {
+      console.error("Wiki link resolution failed:", e);
+    }
+  }, [activeTab?.path, projectRoot, openTargetFile, addToast, t]);
+
   // --- Open new window ---
   const handleNewWindow = useCallback(() => {
     const label = `markly-${Date.now()}`;
@@ -1506,6 +1531,7 @@ function App() {
                 onCloseReference={() => setShowReference(false)}
                 onInsertSnippet={insertSnippet}
                 markdownReference={markdownRef}
+                onOpenWikiLink={handleOpenWikiLink}
               />
             </div>
             {!zenMode && <StatusBar stats={editorStats} fileName={activeTab.name} />}
