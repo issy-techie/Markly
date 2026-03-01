@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, X, Search, Menu, Settings, Info, LogOut, Sun, Moon, Book, ListTree, Maximize, Minimize, FileText, FileDown } from "lucide-react";
+import { Plus, X, Search, FolderSearch, Menu, Settings, Info, LogOut, Sun, Moon, Book, ListTree, Maximize, Minimize, FileText, FileDown } from "lucide-react";
 import type { Tab } from "../../types";
 import { useI18n } from "../../hooks/useI18n";
 import IconButton from "../ui/IconButton";
@@ -20,6 +20,7 @@ interface TabBarProps {
   onToggleTheme: () => void;
   onToggleHamburgerMenu: () => void;
   onOpenSearchDialog: () => void;
+  onOpenProjectSearch: () => void;
   onOpenSettingsDialog: () => void;
   onOpenAboutDialog: () => void;
   onExit: () => void;
@@ -59,6 +60,7 @@ const TabBar: React.FC<TabBarProps> = ({
   onToggleTheme,
   onToggleHamburgerMenu,
   onOpenSearchDialog,
+  onOpenProjectSearch,
   onOpenSettingsDialog,
   onOpenAboutDialog,
   onExit,
@@ -174,6 +176,12 @@ const TabBar: React.FC<TabBarProps> = ({
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
                 <Search size={14} className="shrink-0" /> {t.searchAndReplace} <span className="ml-auto text-xs text-slate-400">Ctrl+F</span>
+              </button>
+              <button
+                onClick={onOpenProjectSearch}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
+              >
+                <FolderSearch size={14} className="shrink-0" /> {t.projectSearch} <span className="ml-auto text-xs text-slate-400">Ctrl+Shift+F</span>
               </button>
               <button
                 onClick={onToggleTheme}

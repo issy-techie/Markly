@@ -1,6 +1,6 @@
 [package]
 name = "markly"
-version = "0.13.0"
+version = "0.14.0"
 description = "A Tauri App"
 authors = ["Issy"]
 edition = "2021"
@@ -24,6 +24,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
+walkdir = "2"
+regex = "1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-window-state = "2"
