@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, X, Search, Menu, Settings, Info, LogOut, Sun, Moon, Book, ListTree, Maximize, Minimize } from "lucide-react";
+import { Plus, X, Search, Menu, Settings, Info, LogOut, Sun, Moon, Book, ListTree, Maximize, Minimize, FileText, FileDown } from "lucide-react";
 import type { Tab } from "../../types";
 import { useI18n } from "../../hooks/useI18n";
 import IconButton from "../ui/IconButton";
@@ -23,6 +23,10 @@ interface TabBarProps {
   onOpenSettingsDialog: () => void;
   onOpenAboutDialog: () => void;
   onExit: () => void;
+  // Export
+  onExportHTML: () => void;
+  onExportPDF: () => void;
+  hasActiveTab: boolean;
   // Zen mode
   zenMode: boolean;
   onToggleZenMode: () => void;
@@ -58,6 +62,9 @@ const TabBar: React.FC<TabBarProps> = ({
   onOpenSettingsDialog,
   onOpenAboutDialog,
   onExit,
+  onExportHTML,
+  onExportPDF,
+  hasActiveTab,
   zenMode,
   onToggleZenMode,
   onTabContextMenu,
@@ -179,6 +186,21 @@ const TabBar: React.FC<TabBarProps> = ({
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
               >
                 {zenMode ? <Minimize size={14} className="shrink-0" /> : <Maximize size={14} className="shrink-0" />} {t.zenMode} <span className="ml-auto text-xs text-slate-400">F11</span>
+              </button>
+              <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
+              <button
+                onClick={onExportHTML}
+                disabled={!hasActiveTab}
+                className={`w-full flex items-center gap-2 px-3 py-2 transition-colors whitespace-nowrap ${hasActiveTab ? "hover:bg-slate-100 dark:hover:bg-slate-700" : "opacity-40 cursor-not-allowed"}`}
+              >
+                <FileText size={14} className="shrink-0" /> {t.exportAsHTML}
+              </button>
+              <button
+                onClick={onExportPDF}
+                disabled={!hasActiveTab}
+                className={`w-full flex items-center gap-2 px-3 py-2 transition-colors whitespace-nowrap ${hasActiveTab ? "hover:bg-slate-100 dark:hover:bg-slate-700" : "opacity-40 cursor-not-allowed"}`}
+              >
+                <FileDown size={14} className="shrink-0" /> {t.exportAsPDF}
               </button>
               <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
               <button

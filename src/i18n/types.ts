@@ -141,6 +141,12 @@ export interface Translations {
   tableRows: string;
   tableColumns: string;
 
+  // Export
+  exportAsHTML: string;
+  exportAsPDF: string;
+  exportedSuccessfully: string;
+  failedExport: string;
+
   // Zen mode
   zenMode: string;
   zenModeExit: string;

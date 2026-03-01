@@ -142,6 +142,12 @@ const en: Translations = {
   tableRows: "Rows",
   tableColumns: "Columns",
 
+  // --- Export ---
+  exportAsHTML: "Export as HTML",
+  exportAsPDF: "Export as PDF",
+  exportedSuccessfully: "Exported successfully",
+  failedExport: "Failed to export",
+
   // --- Zen mode ---
   zenMode: "Zen Mode",
   zenModeExit: "Press Esc or F11 to exit Zen Mode",

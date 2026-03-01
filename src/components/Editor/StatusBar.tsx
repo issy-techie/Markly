@@ -19,7 +19,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ stats, fileName }) => {
   const t = useI18n();
 
   return (
-    <div className="h-6 flex items-center bg-slate-100 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-3 flex-shrink-0 text-[11px] select-none">
+    <div data-status-bar className="h-6 flex items-center bg-slate-100 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-3 flex-shrink-0 text-[11px] select-none">
       {/* Left: file name */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {fileName && (

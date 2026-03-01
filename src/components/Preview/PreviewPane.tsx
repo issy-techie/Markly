@@ -69,7 +69,7 @@ const PreviewPane = React.forwardRef<HTMLDivElement, PreviewPaneProps>(({
       </div>
 
       {/* Reference panel (Slide-in drawer) — positioned relative to non-scrolling wrapper */}
-      <div className={`absolute top-0 right-0 h-full w-64 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md border-l border-slate-200 dark:border-slate-700 shadow-2xl z-40 transition-transform duration-300 ease-in-out transform flex flex-col ${showReference ? "translate-x-0" : "translate-x-full"}`}>
+      <div data-reference-panel className={`absolute top-0 right-0 h-full w-64 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md border-l border-slate-200 dark:border-slate-700 shadow-2xl z-40 transition-transform duration-300 ease-in-out transform flex flex-col ${showReference ? "translate-x-0" : "translate-x-full"}`}>
         <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-100/50 dark:bg-slate-900/50 shrink-0">
           <span className="text-xs font-bold tracking-widest uppercase text-slate-500">Reference</span>
           <button onClick={onCloseReference} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
