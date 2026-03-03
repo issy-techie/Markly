@@ -133,7 +133,7 @@ const TabBar: React.FC<TabBarProps> = ({
             onClick={(e) => onTabClick(tab.id, e)}
             onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onCloseTab(tab.id, e); } }}
             onContextMenu={(e) => onTabContextMenu(e, tab.id)}
-            onMouseDown={(e) => onTabMouseDown(e, index)}
+            onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); onTabMouseDown(e, index); }}
             className={`
               flex items-center gap-2 px-3 py-1.5 text-xs rounded-t-lg
               cursor-pointer group flex-shrink-0 min-w-[80px] max-w-[200px]
