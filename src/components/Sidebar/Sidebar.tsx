@@ -1,5 +1,5 @@
-import React from "react";
-import { FileText, FolderOpen, FolderPlus, FilePlus, RefreshCw, ExternalLink, Search, FolderTree } from "lucide-react";
+import React, { useState, useCallback, useRef } from "react";
+import { FileText, FolderOpen, FolderPlus, FilePlus, RefreshCw, ExternalLink, Search, FolderTree, X } from "lucide-react";
 import type { Tab, FileEntry, ProjectSearchFileGroup } from "../../types";
 import { useI18n } from "../../hooks/useI18n";
 import FileTreeNode from "../FileTreeNode";
@@ -28,6 +28,8 @@ interface SidebarProps {
   onOpenFolder: () => void;
   onNewWindow: () => void;
   onTabClick: (tabId: string) => void;
+  onCloseTab: (tabId: string, e?: React.MouseEvent) => void;
+  onReorderTabs: (fromIndex: number, toIndex: number) => void;
   onResizeMouseDown: (target: "sidebar" | "editor" | "opentabs") => void;
   // Project search props
   showProjectSearch: boolean;
@@ -69,6 +71,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onOpenFolder,
   onNewWindow,
   onTabClick,
+  onCloseTab,
+  onReorderTabs,
   onResizeMouseDown,
   showProjectSearch,
   onToggleProjectSearch,
@@ -86,6 +90,72 @@ const Sidebar: React.FC<SidebarProps> = ({
   onProjectSearchClear,
 }) => {
   const t = useI18n();
+
+  // --- Open Tabs mouse-based drag-and-drop ---
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
+  const tabListRef = useRef<HTMLDivElement>(null);
+
+  const handleTabMouseDown = useCallback((e: React.MouseEvent, index: number) => {
+    // Only left button; ignore if clicking the close button
+    if (e.button !== 0 || (e.target as HTMLElement).closest("button")) return;
+    const startY = e.clientY;
+    let dragging = false;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!dragging && Math.abs(ev.clientY - startY) > 4) {
+        dragging = true;
+        dragIndexRef.current = index;
+        setDragIndex(index);
+      }
+      if (!dragging || !tabListRef.current) return;
+      // Find which tab item the cursor is over
+      const items = tabListRef.current.querySelectorAll<HTMLElement>("[data-tab-index]");
+      let hoverIdx: number | null = null;
+      for (const item of items) {
+        const rect = item.getBoundingClientRect();
+        if (ev.clientY >= rect.top && ev.clientY < rect.bottom) {
+          hoverIdx = parseInt(item.dataset.tabIndex!, 10);
+          break;
+        }
+      }
+      setDropIndex(hoverIdx);
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      if (dragging && dragIndexRef.current !== null) {
+        const from = dragIndexRef.current;
+        setDropIndex(prev => {
+          if (prev !== null && prev !== from) {
+            onReorderTabs(from, prev);
+          }
+          return null;
+        });
+      }
+      dragIndexRef.current = null;
+      setDragIndex(null);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  }, [onReorderTabs]);
+
+  /** Compute relative directory path from projectRoot (excluding filename) */
+  const getRelativeDir = useCallback((tabPath: string | null): string | null => {
+    if (!tabPath || !projectRoot) return null;
+    const normalized = tabPath.replace(/\\/g, "/");
+    const normalizedRoot = projectRoot.replace(/\\/g, "/").replace(/\/$/, "");
+    if (!normalized.startsWith(normalizedRoot + "/")) return null;
+    // relative = "src/components/Sidebar.tsx" etc.
+    const relative = normalized.slice(normalizedRoot.length + 1);
+    const lastSlash = relative.lastIndexOf("/");
+    if (lastSlash < 0) return null; // root-level file
+    return relative.substring(0, lastSlash);
+  }, [projectRoot]);
+
   return (
     <aside
       ref={sidebarRef}
@@ -188,13 +258,41 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Open Tabs */}
           <div className="border-t border-slate-200 dark:border-slate-700 flex flex-col bg-slate-100/50 dark:bg-black/20 overflow-hidden flex-shrink-0" style={{ height: `${openTabsHeight}px` }}>
             <div className="p-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest border-b border-slate-200/50">Open Tabs</div>
-            <div className="flex-1 overflow-y-auto py-1 custom-scrollbar">
-              {tabs.map(tab => (
-                <div key={tab.id} onClick={() => onTabClick(tab.id)} className={`px-4 py-1 text-sm truncate flex items-center justify-between group cursor-pointer ${activeId === tab.id ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium" : "hover:bg-slate-200 dark:hover:bg-slate-700"}`}>
-                  <div className="flex items-center gap-2 truncate text-[11px]"><FileText size={11} className={activeId === tab.id ? "text-blue-500" : "text-slate-400"} /><span className="truncate">{tab.name}</span></div>
-                  {tab.isModified && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>}
-                </div>
-              ))}
+            <div ref={tabListRef} className="flex-1 overflow-y-auto py-1 custom-scrollbar">
+              {tabs.map((tab, index) => {
+                const relDir = getRelativeDir(tab.path);
+                return (
+                  <div
+                    key={tab.id}
+                    data-tab-index={index}
+                    onMouseDown={(e) => handleTabMouseDown(e, index)}
+                    onClick={() => { if (dragIndex === null) onTabClick(tab.id); }}
+                    className={`
+                      px-4 py-1 text-sm flex items-center justify-between group cursor-pointer
+                      ${activeId === tab.id ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium" : "hover:bg-slate-200 dark:hover:bg-slate-700"}
+                      ${dragIndex === index ? "opacity-40" : ""}
+                      ${dropIndex === index && dragIndex !== null && dragIndex !== index ? "border-t-2 border-blue-400" : "border-t-2 border-transparent"}
+                    `}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1 text-[11px]">
+                      <FileText size={11} className={`flex-shrink-0 ${activeId === tab.id ? "text-blue-500" : "text-slate-400"}`} />
+                      <span className="truncate">{tab.name}</span>
+                      {relDir && (
+                        <span className="truncate text-[9px] text-slate-400 dark:text-slate-500 ml-0.5">{relDir}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                      {tab.isModified && <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onCloseTab(tab.id, e); }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-slate-300 dark:hover:bg-slate-600 rounded transition-opacity"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </>

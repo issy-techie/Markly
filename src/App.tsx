@@ -1415,6 +1415,8 @@ function App() {
             onOpenFolder={handleOpenFolder}
             onNewWindow={handleNewWindow}
             onTabClick={handleTabClick}
+            onCloseTab={closeTab}
+            onReorderTabs={reorderTabs}
             onResizeMouseDown={handleMouseDown}
             showProjectSearch={showProjectSearch}
             onToggleProjectSearch={() => setShowProjectSearch(prev => !prev)}
