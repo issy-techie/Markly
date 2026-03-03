@@ -72,6 +72,12 @@ export const createMarkdownComponents = ({
 
   img({ src, alt, ...props }) {
     if (!src || !activeFilePath) return null;
+
+    // Pass through external URLs directly
+    if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:")) {
+      return <img src={src} alt={alt} {...props} className="max-w-full rounded shadow-md my-4 h-auto" />;
+    }
+
     const decodedSrc = decodeURIComponent(src);
     const baseDir = activeFilePath.replace(/\\/g, "/").replace(/\/[^/]+$/, "");
 
